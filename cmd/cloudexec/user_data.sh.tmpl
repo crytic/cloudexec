@@ -1,0 +1,212 @@
+#!/bin/bash
+# shellcheck disable=SC1083
+# shellcheck source=/dev/null
+set -e
+shopt -s inherit_errexit
+
+# Import env vars from user data
+export DIGITALOCEAN_ACCESS_TOKEN={{.DigitalOceanToken}}
+export AWS_ACCESS_KEY_ID={{.SpacesAccessKey}}
+export AWS_SECRET_ACCESS_KEY={{.SpacesSecretKey}}
+export AWS_DEFAULT_REGION={{.SpacesRegion}}
+export SETUP_COMMANDS="{{.SetupCommands}}"
+export RUN_COMMAND="{{.RunCommand}}"
+export TIMEOUT="{{.Timeout}}"
+
+stdout_log="/tmp/cloudexec-stdout.log"
+stderr_log="/tmp/cloudexec-stderr.log"
+
+fmtDate() {
+	date -d "@$1" "+%Y-%m-%d %H:%M:%S"
+}
+
+s3cmd() {
+	command s3cmd --force --stop-on-error \
+		--host="${AWS_DEFAULT_REGION}.digitaloceanspaces.com" \
+		--host-bucket="%(bucket)s.${AWS_DEFAULT_REGION}.digitaloceanspaces.com" \
+		"$@"
+}
+
+# Define a cleanup function that will be executed on signals or exit
+export COMPLETED=false
+export TIMEDOUT=false
+cleanup() {
+	echo "Workload finished, cleaning up droplet..."
+	if [[ ${COMPLETED} == "false" && ${TIMEDOUT} == "false" ]]; then
+		update_state "failed"
+	fi
+
+	echo "Uploading results..."
+	# shellcheck disable=SC2310
+	s3cmd put -r ~/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/" || true # proceed to destroy droplet on error
+
+	echo "Uploading logs..."
+	# shellcheck disable=SC2310
+	s3cmd put /var/log/cloud-init-output.log "s3://${BUCKET_NAME}/job-${JOB_ID}/logs/" || true # proceed to destroy droplet on error
+
+	if [[ -s ${stdout_log} ]]; then
+		echo
+		echo "Dumping standard logs..."
+		cat "${stdout_log}"
+	else
+		echo "No standard logs generated"
+	fi
+
+	if [[ -s ${stderr_log} ]]; then
+		echo
+		echo "Dumping error logs..."
+		cat "${stderr_log}"
+	else
+		echo "No error logs generated"
+	fi
+
+	echo
+	echo "Destroying droplet..."
+	THIS_DROPLET_ID=$(curl -s http://169.254.169.254/metadata/v1/id)
+	curl -s -X DELETE \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer ${DIGITALOCEAN_ACCESS_TOKEN}" \
+		"https://api.digitalocean.com/v2/droplets/${THIS_DROPLET_ID}"
+}
+
+update_state() {
+	local new_status="$1"
+	local updated_at
+	updated_at=$(date +%s)
+	pretty_updated_at=$(fmtDate "${updated_at}")
+	echo
+	echo "Setting new state to '${new_status}' at ${pretty_updated_at}"
+
+	# Define state key and temporary files
+	local state_key="state/state.json"
+	local existing_state_file="/tmp/existing_state.json"
+	local merged_state_file="/tmp/merged_state.json"
+
+	# Download the existing state JSON from the Spaces bucket
+	s3cmd get "s3://${BUCKET_NAME}/${state_key}" "${existing_state_file}"
+
+	# Update the status and updated_at fields of the specified job using jq
+	jq ".jobs |= map(if .id == ${JOB_ID} then .status = \"${new_status}\" | .updated_at = ${updated_at} | if \"${COMPLETED}\" == \"true\" then .completed_at = ${updated_at} else . end else . end)" "${existing_state_file}" >"${merged_state_file}"
+
+	# Upload the merged state JSON to the Spaces bucket using s3cmd
+	s3cmd put --acl-private --mime-type="application/json" "${merged_state_file}" "s3://${BUCKET_NAME}/${state_key}"
+
+	# Clean up temporary files
+	rm "${existing_state_file}" "${merged_state_file}"
+}
+
+# Set the trap to call the cleanup function on signals or exit
+trap cleanup EXIT SIGHUP SIGINT SIGTERM
+
+echo "Setting up DigitalOcean credentials..."
+# ensure these are set in the environment
+if [[ -z ${DIGITALOCEAN_ACCESS_TOKEN} ]]; then
+	echo "ERROR: DIGITALOCEAN_ACCESS_TOKEN is not set"
+	echo "CloudExec will not be able to destroy the droplet"
+	echo "on exit and you will incur charges."
+	exit 1
+fi
+
+echo "Confirming this is a CloudExec droplet..."
+TAGS=$(curl -s http://169.254.169.254/metadata/v1/tags)
+echo "Droplet tags:"
+echo "${TAGS}"
+export JOB_ID=""
+export USERNAME=""
+export CLOUDEXEC=false
+for tag in ${TAGS}; do
+	if [[ ${tag} == "Purpose:cloudexec" ]]; then
+		CLOUDEXEC=true
+	elif [[ ${tag} == "Owner:"* ]]; then
+		USERNAME=${tag#"Owner:"}
+	elif [[ ${tag} == "Job:"* ]]; then
+		JOB_ID=${tag#"Job:"}
+	fi
+done
+if [[ ${CLOUDEXEC} == false ]] || [[ ${USERNAME} == "" ]]; then
+	echo "Not a CloudExec droplet, exiting..."
+	# exit 1
+fi
+if [[ ${JOB_ID} == "" ]]; then
+	echo "No job ID, exiting..."
+	exit 1
+fi
+export BUCKET_NAME="cloudexec-${USERNAME}-trailofbits"
+
+echo "Setting up S3 credentials..."
+# Spaces uses the AWS S3 API
+for var in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION; do
+	if [[ -z ${!var} ]]; then
+		echo "${var} is not set, exiting..."
+		exit 1
+	fi
+done
+
+echo "Downloading inputs..."
+s3cmd get -r "s3://${BUCKET_NAME}/job-${JOB_ID}/input" ~/
+
+if [[ ! -d ~/input ]]; then
+	echo "Error: Failed to download inputs directory"
+	exit 1
+fi
+
+source ~/venv/bin/activate
+
+echo "Running setup..."
+mkdir -p ~/output
+eval "${SETUP_COMMANDS}"
+
+# Update state to running
+update_state "running"
+
+# Create a temporary file to track the completion of the task
+exit_code_flag="/tmp/cloudexec-exit-code"
+
+# Use Ctrl-C to detach from the tmux session
+echo "bind-key -n C-c detach" >~/.tmux.conf
+# Run the tmux command in the background
+echo "Attach to the tmux session with 'cloudexec attach'"
+tmux_session="cloudexec"
+wrapped_run_command="$(
+	cat <<-EOF
+		set_exit_code() { echo \$? > ${exit_code_flag}; };
+		trap set_exit_code EXIT;
+		( ${RUN_COMMAND} ) > >(tee -a ${stdout_log}) 2> >(tee -a ${stderr_log} >&2);
+	EOF
+)"
+tmux new-session -d -s "${tmux_session}" "${wrapped_run_command}"
+
+start_time=$(date "+%s")
+pretty_start_time="$(fmtDate "${start_time}")"
+end_time=$(("${start_time}" + TIMEOUT))
+pretty_end_time="$(fmtDate "${end_time}")"
+echo "Workload is running, timer started at ${pretty_start_time}, we'll time out at ${pretty_end_time}"
+
+# Wait for the temporary file to be created
+while true; do
+	if [[ -s ${exit_code_flag} ]]; then
+		exit_code="$(cat "${exit_code_flag}")"
+		echo
+		echo "CloudExec process has completed with exit code ${exit_code}"
+		if [[ ${exit_code} == "0" ]]; then
+			update_state "completed"
+		else
+			update_state "failed"
+		fi
+		COMPLETED=true
+		# Remove the done flag temp file
+		rm "${exit_code_flag}"
+		break
+	fi
+
+	current_time=$(date "+%s")
+	if [[ ${current_time} -gt ${end_time} ]]; then
+		echo
+		echo "timeout reached, shutting down"
+		update_state "timedout"
+		TIMEDOUT=true
+		break
+	fi
+
+	sleep 1s
+done

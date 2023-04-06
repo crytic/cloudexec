@@ -1,1 +1,7 @@
+.direnv/
 .env
+.vscode/
+bin/
+dist/
+result
+.vscode

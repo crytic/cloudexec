@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+
+# Cancel in progress runs for PRs but not main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: ./go.mod
+      - name: Build
+        run: |
+          mkdir bin
+          go build -o bin/ ./...
+      - name: Test binary
+        run: |
+          ./bin/cloudexec version

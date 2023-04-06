@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+project_name: cloudexec
+builds:
+  - ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.FullCommit}}
+      - -X main.date={{.CommitDate}}
+    env:
+      - CGO_ENABLED=0
+      - GOFLAGS=-mod=readonly -trimpath
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    main: ./cmd/cloudexec/
+    # ensures mod timestamp to be the commit timestamp
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+source:
+  enabled: true
+  rlcp: true
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}-
+      {{- .Version }}-
+      {{- .Os }}-
+      {{- .Arch }}
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+checksum:
+  name_template: checksums.txt
+signs:
+  - cmd: cosign
+    signature: ${artifact}.bundle
+    args: [sign-blob, --yes, "--bundle=${signature}", "${artifact}"]
+    artifacts: all
+
+release:
+  github:
+    owner: trailofbits
+    name: cloudexec
+
+brews:
+  - tap:
+      owner: trailofbits
+      name: homebrew-tools
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    homepage: https://github.com/trailofbits/cloudexec
+    download_strategy: GitHubPrivateReleaseDownloadStrategy
+    custom_require: lib/private
+    folder: Formula
+    install: |-
+      bin.install "cloudexec"
+    test: |
+      system "#{bin}/cloudexec version"
+    caveats: |
+      CloudExec can optionally use the 1Password CLI for secure credential management.
+      To use this feature, you need to have the 1Password CLI installed.
+
+      To install the 1Password CLI, run:
+        brew install --cask 1password-cli
+
+      For more information on using 1Password CLI with CloudExec, visit:
+      https://github.com/trailofbits/cloudexec#configure-credentials

@@ -1,0 +1,57 @@
+name: Build CloudExec Snapshot
+
+on:
+  # weekly on sundays
+  schedule:
+    - cron: 0 0 * * 0
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Packer
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt-get update && sudo apt-get install packer
+
+      - name: Set up DigitalOcean CLI
+        run: |
+          curl -sL https://github.com/digitalocean/doctl/releases/download/v1.63.0/doctl-1.63.0-linux-amd64.tar.gz | tar -xzv
+          sudo mv doctl /usr/local/bin
+          doctl auth init -t ${{ secrets.DIGITALOCEAN_API_TOKEN }}
+
+      - name: Build and update snapshot
+        env:
+          DIGITALOCEAN_API_TOKEN: ${{ secrets.DIGITALOCEAN_API_TOKEN }}
+        run: |
+          cd packer/
+          packer init cloudexec.pkr.hcl
+          # Build the new snapshot
+          packer build \
+            -var "do_api_token=${DIGITALOCEAN_API_TOKEN}" \
+            cloudexec.pkr.hcl
+
+      - name: Cleanup existing cloudexec snapshots
+        env:
+          DIGITALOCEAN_API_TOKEN: ${{ secrets.DIGITALOCEAN_API_TOKEN }}
+        run: |
+          existing_snapshots=$(doctl compute snapshot list --resource droplet --format ID,Name,CreatedAt --no-header | awk '/cloudexec/ {print $1 " " $3}' | sort -k2)
+
+          # Delete the oldest cloudexec snapshot if there are > 2 
+          if [ $(echo "$existing_snapshots" | wc -l) -eq 3 ]; then
+            oldest_snapshot_id=$(echo "$existing_snapshots" | head -n 1 | awk '{print $1}')
+            oldest_snapshot_name=$(echo "$existing_snapshots" | head -n 1 | awk '{print $2}')
+            echo "Deleting oldest cloudexec snapshot: ${oldest_snapshot_id} - ${oldest_snapshot_name}"
+            doctl compute snapshot delete -f "${oldest_snapshot_id}"
+          fi
+
+          echo "Completed snapshot update"
