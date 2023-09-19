@@ -95,35 +95,26 @@ func ListBuckets(config config.Config) ([]string, error) {
 	return buckets, nil
 }
 
-func GetOrCreateBucket(config config.Config, bucket string) error {
-	listBucketsOutput, err := ListBuckets(config)
-	if err != nil {
-		return fmt.Errorf("Failed to list buckets: %w", err)
-	}
+func SetVersioning(config config.Config, bucket string) error {
+  // create a non-init client
+  s3Client, err := initializeS3Client(config, false)
+  if err != nil {
+    return err
+  }
+  // ensure versioning is enabled on the bucket
+  _, err = s3Client.PutBucketVersioning(&s3.PutBucketVersioningInput{
+    Bucket: aws.String(bucket),
+    VersioningConfiguration: &s3.VersioningConfiguration{
+      Status: aws.String("Enabled"),
+    },
+  })
+  if err != nil {
+    return fmt.Errorf("Failed to enable versioning on bucket '%s': %w", bucket, err)
+  }
+  return nil
+}
 
-	// Check if the desired Space already exists
-	for _, thisBucket := range listBucketsOutput {
-		if thisBucket == bucket {
-			// create a non-init client
-			s3Client, err := initializeS3Client(config, false)
-			if err != nil {
-				return err
-			}
-
-			// ensure versioning is enabled on the bucket
-			_, err = s3Client.PutBucketVersioning(&s3.PutBucketVersioningInput{
-				Bucket: aws.String(bucket),
-				VersioningConfiguration: &s3.VersioningConfiguration{
-					Status: aws.String("Enabled"),
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("Failed to enable versioning on bucket '%s': %w", bucket, err)
-			}
-			return nil
-		}
-	}
-
+func CreateBucket(config config.Config, bucket string) error {
 	// create an initialization client
 	s3Client, err := initializeS3Client(config, true)
 	if err != nil {
@@ -149,21 +140,11 @@ func GetOrCreateBucket(config config.Config, bucket string) error {
 		return fmt.Errorf("Failed to wait for bucket '%s': %w", bucket, err)
 	}
 
-	// enable versioning on the bucket
-	_, err = s3Client.PutBucketVersioning(&s3.PutBucketVersioningInput{
-		Bucket: aws.String(bucket),
-		VersioningConfiguration: &s3.VersioningConfiguration{
-			Status: aws.String("Enabled"),
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to enable versioning on bucket '%s': %w", bucket, err)
-	}
-
 	fmt.Printf("Created bucket '%s'...\n", bucket)
 	return nil
 }
 
+// Note: will overwrite existing object.
 func PutObject(config config.Config, bucket string, key string, value []byte) error {
 	// create a client
 	s3Client, err := initializeS3Client(config, false)
@@ -173,10 +154,9 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 
 	// If zero-length value is given, create a directory instead of a file
 	if len(value) == 0 {
-		// Create the state directory
 		_, err = s3Client.PutObject(&s3.PutObjectInput{
 			Bucket: aws.String(bucket),
-			Key:    aws.String("state/"),
+			Key:    aws.String(key),
 		})
 		if err != nil {
 			return fmt.Errorf("Failed to create %s directory in bucket %s: %w", key, bucket, err)
@@ -204,6 +184,17 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 	// fmt.Printf("Successfully uploaded %s to %s\n", key, bucket)
 
 	return nil
+}
+
+func ObjectExists(config config.Config, bucket string, key string) (bool, error) {
+  // Get a list of objects that are prefixed by the target key
+  objects, err := ListObjects(config, bucket, key)
+	if err != nil {
+		return false, err
+	}
+
+  // return true if we got a non-zero number of objects that match the prefix
+  return len(objects) != 0, nil
 }
 
 func GetObject(config config.Config, bucket string, key string) ([]byte, error) {

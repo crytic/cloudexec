@@ -133,7 +133,7 @@ func main() {
 					dropletRegion := c.String("region")
 
           // Initialize the s3 state
-					err = Init(bucketName, config)
+					err = Init(config, bucketName)
 					if err != nil {
 						return err
 					}
@@ -163,7 +163,7 @@ func main() {
 					}
 
           // Initialize the s3 state
-					err = Init(bucketName, config)
+					err = Init(config, bucketName)
 					if err != nil {
 						return err
 					}
@@ -203,7 +203,7 @@ func main() {
 					}
 
           // Initialize the s3 state
-					err = Init(bucketName, config)
+					err = Init(config, bucketName)
 					if err != nil {
 						return err
 					}
@@ -247,7 +247,7 @@ func main() {
 					}
 
           // Initialize the s3 state
-					err = Init(bucketName, config)
+					err = Init(config, bucketName)
 					if err != nil {
 						return err
 					}
@@ -296,7 +296,7 @@ func main() {
 					}
 
           // Initialize the s3 state
-					err = Init(bucketName, config)
+					err = Init(config, bucketName)
 					if err != nil {
 						return err
 					}
@@ -344,7 +344,7 @@ func main() {
 					}
 
           // Initialize the s3 state
-					err = Init(bucketName, config)
+					err = Init(config, bucketName)
 					if err != nil {
 						return err
 					}
@@ -413,7 +413,7 @@ func main() {
 							}
 
               // Initialize the s3 state
-              err = Init(bucketName, config)
+              err = Init(config, bucketName)
               if err != nil {
                 return err
               }
@@ -441,7 +441,7 @@ func main() {
 							}
 
               // Initialize the s3 state
-              err = Init(bucketName, config)
+              err = Init(config, bucketName)
               if err != nil {
                 return err
               }
@@ -482,7 +482,7 @@ func main() {
 							}
 
               // Initialize the s3 state
-              err = Init(bucketName, config)
+              err = Init(config, bucketName)
               if err != nil {
                 return err
               }
@@ -514,7 +514,7 @@ func main() {
 					}
 
           // Initialize the s3 state
-          err = Init(bucketName, config)
+          err = Init(config, bucketName)
           if err != nil {
             return err
           }
