@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
+	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/ssh"
+	"github.com/crytic/cloudexec/pkg/state"
 	"github.com/olekukonko/tablewriter"
-	do "github.com/trailofbits/cloudexec/pkg/digitalocean"
-	"github.com/trailofbits/cloudexec/pkg/ssh"
-	"github.com/trailofbits/cloudexec/pkg/state"
 	"github.com/urfave/cli/v2"
 )
 
@@ -39,7 +39,7 @@ func main() {
 
 	app := &cli.App{
 		Name:  "cloudexec",
-		Usage: "easily run cloud based fuzzing jobs",
+		Usage: "easily run cloud based jobs",
 		Commands: []*cli.Command{
 			{
 				Name:    "check",
@@ -65,23 +65,6 @@ func main() {
 				},
 			},
 			{
-				Name:    "init",
-				Usage:   "Initialize a cloud fuzzing environment",
-				Aliases: []string{"i"},
-				Action: func(*cli.Context) error {
-					// Abort on configuration error
-					if configErr != nil {
-						return configErr
-					}
-
-					err = Init(bucketName, config)
-					if err != nil {
-						return err
-					}
-					return nil
-				},
-			},
-			{
 				Name:  "configure",
 				Usage: "Configure credentials",
 				Action: func(*cli.Context) error {
@@ -94,7 +77,7 @@ func main() {
 			},
 			{
 				Name:    "launch",
-				Usage:   "Launch a droplet and start a fuzzing job",
+				Usage:   "Launch a droplet and start a job",
 				Aliases: []string{"l"},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -149,6 +132,12 @@ func main() {
 					dropletSize := c.String("size")
 					dropletRegion := c.String("region")
 
+          // Initialize the s3 state
+					err = Init(bucketName, config)
+					if err != nil {
+						return err
+					}
+
 					fmt.Printf("Launching a %s droplet in the %s region\n", dropletSize, dropletRegion)
 					err = Launch(user, config, dropletSize, dropletRegion, lc)
 					if err != nil {
@@ -171,6 +160,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+          // Initialize the s3 state
+					err = Init(bucketName, config)
+					if err != nil {
+						return err
 					}
 
 					existingState, err := state.GetState(config, bucketName)
@@ -205,6 +200,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+          // Initialize the s3 state
+					err = Init(bucketName, config)
+					if err != nil {
+						return err
 					}
 
 					instanceToJobs, err := state.GetJobIdsByInstance(config, bucketName)
@@ -245,6 +246,12 @@ func main() {
 						return configErr
 					}
 
+          // Initialize the s3 state
+					err = Init(bucketName, config)
+					if err != nil {
+						return err
+					}
+
 					instanceToJobs, err := state.GetJobIdsByInstance(config, bucketName)
 					if err != nil {
 						return err
@@ -268,7 +275,7 @@ func main() {
 			},
 			{
 				Name:  "pull",
-				Usage: "Pulls down the results of the latest successful fuzzing job",
+				Usage: "Pulls down the results of the latest successful job",
 				Flags: []cli.Flag{
 					&cli.IntFlag{
 						Name:  "job",
@@ -286,6 +293,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+          // Initialize the s3 state
+					err = Init(bucketName, config)
+					if err != nil {
+						return err
 					}
 
 					existingState, err := state.GetState(config, bucketName)
@@ -328,6 +341,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+          // Initialize the s3 state
+					err = Init(bucketName, config)
+					if err != nil {
+						return err
 					}
 
 					existingState, err := state.GetState(config, bucketName)
@@ -393,6 +412,12 @@ func main() {
 								return configErr
 							}
 
+              // Initialize the s3 state
+              err = Init(bucketName, config)
+              if err != nil {
+                return err
+              }
+
 							// Retrieve existing state
 							existingState, err := state.GetState(config, bucketName)
 							if err != nil {
@@ -414,6 +439,12 @@ func main() {
 							if configErr != nil {
 								return configErr
 							}
+
+              // Initialize the s3 state
+              err = Init(bucketName, config)
+              if err != nil {
+                return err
+              }
 
 							jobID := c.Args().First() // Get the job ID from the arguments
 							if jobID == "" {
@@ -450,6 +481,12 @@ func main() {
 								return configErr
 							}
 
+              // Initialize the s3 state
+              err = Init(bucketName, config)
+              if err != nil {
+                return err
+              }
+
 							// Retrieve existing state
 							existingState, err := state.GetState(config, bucketName)
 							if err != nil {
@@ -475,6 +512,13 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+
+          // Initialize the s3 state
+          err = Init(bucketName, config)
+          if err != nil {
+            return err
+          }
+
 					// First check if there's a running job
 					existingState, err := state.GetState(config, bucketName)
 					if err != nil {

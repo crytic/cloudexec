@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/trailofbits/cloudexec/pkg/config"
-	do "github.com/trailofbits/cloudexec/pkg/digitalocean"
-	"github.com/trailofbits/cloudexec/pkg/s3"
-	"github.com/trailofbits/cloudexec/pkg/ssh"
-	"github.com/trailofbits/cloudexec/pkg/state"
+	"github.com/crytic/cloudexec/pkg/config"
+	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/ssh"
+	"github.com/crytic/cloudexec/pkg/state"
 )
 
 type Commands struct {
@@ -88,12 +87,6 @@ func LoadLaunchConfig(launchConfigPath string) (LaunchConfig, error) {
 func Launch(user *user.User, config config.Config, dropletSize string, dropletRegion string, lc LaunchConfig) error {
 	username := user.Username
 	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", username)
-
-	fmt.Printf("Getting or creating new bucket for %s...\n", username)
-	err := s3.GetOrCreateBucket(config, bucketName)
-	if err != nil {
-		return fmt.Errorf("Failed to get bucket for %s: %w", username, err)
-	}
 
 	// get existing state from bucket
 	fmt.Printf("Getting existing state from bucket %s...\n", bucketName)

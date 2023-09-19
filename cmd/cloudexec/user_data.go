@@ -7,7 +7,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/config"
 )
 
 type UserData struct {
