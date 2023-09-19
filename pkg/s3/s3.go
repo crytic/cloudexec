@@ -95,10 +95,7 @@ func ListBuckets(config config.Config) ([]string, error) {
 	return buckets, nil
 }
 
-func GetOrCreateBucket(config config.Config, username string) error {
-	// TODO: sanitize username & centralize bucket name creation
-	bucket := fmt.Sprintf("cloudexec-%s-trailofbits", username)
-
+func GetOrCreateBucket(config config.Config, bucket string) error {
 	listBucketsOutput, err := ListBuckets(config)
 	if err != nil {
 		return fmt.Errorf("Failed to list buckets: %w", err)

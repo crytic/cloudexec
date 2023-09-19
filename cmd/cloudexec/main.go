@@ -31,6 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 	userName := user.Username
+  // TODO: sanitize username usage in bucketname
 	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", userName)
 
 	// Attempt to load the configuration
@@ -73,7 +74,7 @@ func main() {
 						return configErr
 					}
 
-					err = Init(userName, config)
+					err = Init(bucketName, config)
 					if err != nil {
 						return err
 					}

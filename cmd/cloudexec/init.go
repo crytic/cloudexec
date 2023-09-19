@@ -7,12 +7,11 @@ import (
 	"github.com/trailofbits/cloudexec/pkg/s3"
 )
 
-func Init(username string, config config.Config) error {
-	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", username)
+func Init(bucketName string, config config.Config) error {
 	// Create a new bucket (or get an existing one)
-	err := s3.GetOrCreateBucket(config, username)
+	err := s3.GetOrCreateBucket(config, bucketName)
 	if err != nil {
-		return fmt.Errorf("Failed to get bucket for %s: %w", username, err)
+		return fmt.Errorf("Failed to get %s bucket: %w", bucketName, err)
 	}
 	fmt.Printf("Using bucket: %v\n", bucketName)
 

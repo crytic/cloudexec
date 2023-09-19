@@ -90,7 +90,7 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", username)
 
 	fmt.Printf("Getting or creating new bucket for %s...\n", username)
-	err := s3.GetOrCreateBucket(config, username)
+	err := s3.GetOrCreateBucket(config, bucketName)
 	if err != nil {
 		return fmt.Errorf("Failed to get bucket for %s: %w", username, err)
 	}
