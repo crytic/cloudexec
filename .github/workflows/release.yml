@@ -36,7 +36,7 @@ jobs:
           for file in *.{tar.gz,zip}; do
             if [ -f "$file" ]; then
               cosign verify-blob \
-                --certificate-identity-regexp "https://github.com/trailofbits/cloudexec.*" \
+                --certificate-identity-regexp "https://github.com/crytic/cloudexec.*" \
                 --certificate-oidc-issuer https://token.actions.githubusercontent.com \
                 --bundle "$file.bundle" \
                 $file
