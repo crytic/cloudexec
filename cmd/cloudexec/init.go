@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
-	"github.com/trailofbits/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 func Init(username string, config config.Config) error {

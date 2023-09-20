@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
-	"github.com/trailofbits/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 func DownloadJobOutput(config config.Config, jobID int, localPath string, bucketName string) error {

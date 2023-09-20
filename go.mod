@@ -1,4 +1,4 @@
-module github.com/trailofbits/cloudexec
+module github.com/crytic/cloudexec
 
 go 1.20
 

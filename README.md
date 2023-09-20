@@ -1,6 +1,6 @@
-# CloudFuzz
+# CloudExec
 
-CloudFuzz is a command-line tool for easily running cloud-based fuzzing jobs on DigitalOcean. Start, manage and pull the results of fuzzing jobs from your terminal.
+CloudExec is a command-line tool for easily running cloud-based jobs on DigitalOcean. Start, manage and pull the results of jobs from your terminal.
 
 ## Getting Started
 
@@ -10,20 +10,20 @@ CloudFuzz is a command-line tool for easily running cloud-based fuzzing jobs on 
 
 ```bash
 brew tap trailofbits/tools
-brew install cloudfuzz
+brew install cloudexec
 ```
 
 #### Upgrade with Brew
 
 ```bash
-brew update && brew upgrade cloudfuzz
+brew update && brew upgrade cloudexec
 ```
 
 alternatively, you can install from a GitHub release:
 
 ### Install from a GitHub release
 
-Download the latest release for your platform from the [releases page](https://github.com/trailofbits/cloudfuzz/releases).
+Download the latest release for your platform from the [releases page](https://github.com/crytic/cloudexec/releases).
 
 #### Release verification
 
@@ -31,36 +31,36 @@ Releases are signed with sigstore. You can verify using [`cosign`](https://githu
 
 ```bash
 cosign verify-blob \
-    --certificate-identity-regexp "https://github.com/trailofbits/cloudfuzz.*" \
+    --certificate-identity-regexp "https://github.com/crytic/cloudexec.*" \
     --certificate-oidc-issuer https://token.actions.githubusercontent.com  \
-    --bundle cloudfuzz-<version>-<os>-<arch>.tar.gz.bundle \
-    cloudfuzz-<version>-<os>-<arch>.tar.gz
+    --bundle cloudexec-<version>-<os>-<arch>.tar.gz.bundle \
+    cloudexec-<version>-<os>-<arch>.tar.gz
 ```
 
 #### Install from a tarball
 
 ```bash
-tar -xzf cloudfuzz-<version>-<os>-<arch>.tar.gz
-mv cloudfuzz /usr/local/bin
+tar -xzf cloudexec-<version>-<os>-<arch>.tar.gz
+mv cloudexec /usr/local/bin
 ```
 
 #### Install from source
 
-Running the command below will build the CLI tool from source with a binary named `cloudfuzz` in a `dist` folder:
+Running the command below will build the CLI tool from source with a binary named `cloudexec` in a `dist` folder:
 
 ```bash
 make build
 ```
 
-Then, move the resulting binary from `./dist/cloufuzz` into your `PATH`.
+Then, move the resulting binary from `./dist/clouexec` into your `PATH`.
 
-Nix users can run `nix build` and then `nix profile install ./result` to install `cloudfuzz`. A helper command `make nix-install` is available which performs these steps for you and also upgrades an existing version of `cloudfuzz` that might already be installed.
+Nix users can run `nix build` and then `nix profile install ./result` to install `cloudexec`. A helper command `make nix-install` is available which performs these steps for you and also upgrades an existing version of `cloudexec` that might already be installed.
 
 ### Configure credentials
 
-CloudFuzz requires DigitalOcean API credentials to manage droplets, and Spaces credentials to store state and job data. The recommended method for storing and providing your credentials securely is by using the 1Password CLI.
+CloudExec requires DigitalOcean API credentials to manage droplets, and Spaces credentials to store state and job data. The recommended method for storing and providing your credentials securely is by using the 1Password CLI.
 
-CloudFuzz supports natively integrating with 1Password, allowing you to reference your credentials stored in your 1Password vault. However, you can also choose to provide plaintext credentials using the `cloudfuzz configure` command. Additionally, you can override individual values or the entire configuration by setting the corresponding environment variables.
+CloudExec supports natively integrating with 1Password, allowing you to reference your credentials stored in your 1Password vault. However, you can also choose to provide plaintext credentials using the `cloudexec configure` command. Additionally, you can override individual values or the entire configuration by setting the corresponding environment variables.
 
 #### Get credentials from DigitalOcean
 
@@ -82,14 +82,14 @@ brew install --cask 1password/tap/1password-cli # see the link above for install
 eval $(op signin)
 ```
 
-Note what your [1Password secret references](https://developer.1password.com/docs/cli/secret-references/) are and use them in place of your actual secret values during the `cloudfuzz configure` or env var setup steps described in the next section.
+Note what your [1Password secret references](https://developer.1password.com/docs/cli/secret-references/) are and use them in place of your actual secret values during the `cloudexec configure` or env var setup steps described in the next section.
 
 These references generally follow the format: `op://<vault-name>/<item-name>/<field-name>`. For example, if you saved your keys to a vault called `Private`, in an item called `DigitalOcean` and the api key field is called `ApiKey`, then the secret reference to use is `op://Private/DigitalOcean/ApiKey`.
 
-#### Configure CloudFuzz
+#### Configure CloudExec
 
 ```bash
-cloudfuzz configure
+cloudexec configure
 ```
 
 or set environment variables:
@@ -103,41 +103,41 @@ DIGITALOCEAN_SPACES_REGION
 
 Remember, if you save secret values to a `.env` file, never commit it to any version control system. Add such `.env` files to your project's `.gitignore` file to help prevent making such mistakes.
 
-### Check CloudFuzz access
+### Check CloudExec access
 
-Confirm `cloudfuzz` has access to DigitalOcean.
+Confirm `cloudexec` has access to DigitalOcean.
 
 ```bash
-cloudfuzz check
+cloudexec check
 ```
 
-### Initialize your CloudFuzz environment
+### Initialize your CloudExec environment
 
 ```bash
-cloudfuzz init
+cloudexec init
 ```
 
-### Launch a new remote fuzzing job
+### Launch a new remote job
 
-Generate a cloudfuzz.toml configuration file in the current directory.
+Generate a cloudexec.toml configuration file in the current directory.
 
 ```bash
-cloudfuzz launch init
+cloudexec launch init
 ```
 
-Update the `cloudfuzz.toml` as needed.
+Update the `cloudexec.toml` as needed.
 
 ```bash
-# default nyc3 region and c-2 size droplet, using a cloudfuzz.toml file in the current directory
-cloudfuzz launch
+# default nyc3 region and c-2 size droplet, using a cloudexec.toml file in the current directory
+cloudexec launch
 # custom region and droplet size
-cloudfuzz launch --size c-4 --region sfo2
+cloudexec launch --size c-4 --region sfo2
 ```
 
 ### Stream logs from the provisioning script
 
 ```bash
-cloudfuzz logs
+cloudexec logs
 ```
 
 Note that the `logs` subcommand will continue to stream logs until you stop with ctrl-c, even after the job is finished and stops producing new logs. This is a read-only command and it is safe to kill it at any point.
@@ -145,53 +145,53 @@ Note that the `logs` subcommand will continue to stream logs until you stop with
 ### Get logs from a previous run
 
 ```bash
-cloudfuzz logs --job 1
+cloudexec logs --job 1
 ```
 
 ### Attach to the running job
 
 ```bash
-cloudfuzz attach
+cloudexec attach
 
 # or
-ssh -t cloudfuzz tmux attach -s cloudfuzz
+ssh -t cloudexec tmux attach -s cloudexec
 ```
 
 ### SSH to your droplet
 
 ```bash
-ssh cloudfuzz
+ssh cloudexec
 ```
 
 ### Check on the status of your jobs
 
 ```bash
 # show only runnning jobs, and the last completed job
-cloudfuzz status
+cloudexec status
 # show all jobs
-cloudfuzz status --all
+cloudexec status --all
 ```
 
 ### Sync files from a completed job to a local path
 
 ```bash
 # pull from the latest successful job
-cloudfuzz pull example/output
+cloudexec pull example/output
 # pull from any job ID
-cloudfuzz pull --job 1 example/output
+cloudexec pull --job 1 example/output
 
 ```
 
 ### Cancel any in progress jobs
 
 ```bash
-cloudfuzz cancel
+cloudexec cancel
 ```
 
 ### Cleanup all bucket contents and reset state (destructive)
 
 ```bash
-cloudfuzz clean
+cloudexec clean
 ```
 
 Note that there is often a delay while deleting files from Digital Ocean Spaces buckets.

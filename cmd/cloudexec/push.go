@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
-	"github.com/trailofbits/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 func UploadDirectoryToSpaces(config config.Config, bucketName string, sourcePath string, destPath string) error {
