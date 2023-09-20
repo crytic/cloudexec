@@ -44,7 +44,8 @@ mv /tmp/echidna /usr/local/bin
 rm /tmp/echidna.tar.gz
 
 echo "Downloading medusa..."
-sudo apt-get update; sudo apt-get install -y unzip
+sudo apt-get update
+sudo apt-get install -y unzip
 curl -fsSL https://github.com/crytic/medusa/releases/download/v0.1.0/medusa-linux-x64.zip -o medusa.zip
 unzip medusa.zip
 chmod +x medusa

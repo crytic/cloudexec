@@ -31,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 	userName := user.Username
-  // TODO: sanitize username usage in bucketname
+	// TODO: sanitize username usage in bucketname
 	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", userName)
 
 	// Attempt to load the configuration
@@ -132,7 +132,7 @@ func main() {
 					dropletSize := c.String("size")
 					dropletRegion := c.String("region")
 
-          // Initialize the s3 state
+					// Initialize the s3 state
 					err = Init(config, bucketName)
 					if err != nil {
 						return err
@@ -162,7 +162,7 @@ func main() {
 						return configErr
 					}
 
-          // Initialize the s3 state
+					// Initialize the s3 state
 					err = Init(config, bucketName)
 					if err != nil {
 						return err
@@ -202,7 +202,7 @@ func main() {
 						return configErr
 					}
 
-          // Initialize the s3 state
+					// Initialize the s3 state
 					err = Init(config, bucketName)
 					if err != nil {
 						return err
@@ -246,7 +246,7 @@ func main() {
 						return configErr
 					}
 
-          // Initialize the s3 state
+					// Initialize the s3 state
 					err = Init(config, bucketName)
 					if err != nil {
 						return err
@@ -295,7 +295,7 @@ func main() {
 						return configErr
 					}
 
-          // Initialize the s3 state
+					// Initialize the s3 state
 					err = Init(config, bucketName)
 					if err != nil {
 						return err
@@ -343,7 +343,7 @@ func main() {
 						return configErr
 					}
 
-          // Initialize the s3 state
+					// Initialize the s3 state
 					err = Init(config, bucketName)
 					if err != nil {
 						return err
@@ -412,11 +412,11 @@ func main() {
 								return configErr
 							}
 
-              // Initialize the s3 state
-              err = Init(config, bucketName)
-              if err != nil {
-                return err
-              }
+							// Initialize the s3 state
+							err = Init(config, bucketName)
+							if err != nil {
+								return err
+							}
 
 							// Retrieve existing state
 							existingState, err := state.GetState(config, bucketName)
@@ -440,11 +440,11 @@ func main() {
 								return configErr
 							}
 
-              // Initialize the s3 state
-              err = Init(config, bucketName)
-              if err != nil {
-                return err
-              }
+							// Initialize the s3 state
+							err = Init(config, bucketName)
+							if err != nil {
+								return err
+							}
 
 							jobID := c.Args().First() // Get the job ID from the arguments
 							if jobID == "" {
@@ -481,11 +481,11 @@ func main() {
 								return configErr
 							}
 
-              // Initialize the s3 state
-              err = Init(config, bucketName)
-              if err != nil {
-                return err
-              }
+							// Initialize the s3 state
+							err = Init(config, bucketName)
+							if err != nil {
+								return err
+							}
 
 							// Retrieve existing state
 							existingState, err := state.GetState(config, bucketName)
@@ -513,11 +513,11 @@ func main() {
 						return configErr
 					}
 
-          // Initialize the s3 state
-          err = Init(config, bucketName)
-          if err != nil {
-            return err
-          }
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
+					}
 
 					// First check if there's a running job
 					existingState, err := state.GetState(config, bucketName)

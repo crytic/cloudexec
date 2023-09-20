@@ -301,11 +301,11 @@ func GetLatestSnapshot(config config.Config) (Snapshot, error) {
 		options.Page++
 	}
 
-  if latestSnapshot == nil {
-    return Snapshot{
-      ID:   "ubuntu-22-04-x64",
-      Name: "default",
-    }, nil
+	if latestSnapshot == nil {
+		return Snapshot{
+			ID:   "ubuntu-22-04-x64",
+			Name: "default",
+		}, nil
 	}
 
 	return Snapshot{

@@ -207,7 +207,7 @@ func GetJobIdsByInstance(config config.Config, bucketName string) (map[int64][]i
 	}
 	instanceToJobIds := make(map[int64][]int64)
 	if existingState.Jobs == nil {
-		return instanceToJobIds, nil 
+		return instanceToJobIds, nil
 	}
 	for _, job := range existingState.Jobs {
 		instanceToJobIds[job.InstanceID] = append(instanceToJobIds[job.InstanceID], job.ID)

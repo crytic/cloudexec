@@ -191,7 +191,7 @@ cloudexec clean
 Note that there is often a delay while deleting files from Digital Ocean Spaces buckets.
 
 ## Optional: Create a cloudexec DigitalOcean image
- 
+
 Building and uploading a dedicated DigitalOcean image for cloudfuzz will simplify your launch configuration and improve startup times.
 
 To do so, install `packer` with `brew install packer`. If you're using `nix` and `direnv`, it's added to your PATH via the flake's dev shell.

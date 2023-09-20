@@ -96,22 +96,22 @@ func ListBuckets(config config.Config) ([]string, error) {
 }
 
 func SetVersioning(config config.Config, bucket string) error {
-  // create a non-init client
-  s3Client, err := initializeS3Client(config, false)
-  if err != nil {
-    return err
-  }
-  // ensure versioning is enabled on the bucket
-  _, err = s3Client.PutBucketVersioning(&s3.PutBucketVersioningInput{
-    Bucket: aws.String(bucket),
-    VersioningConfiguration: &s3.VersioningConfiguration{
-      Status: aws.String("Enabled"),
-    },
-  })
-  if err != nil {
-    return fmt.Errorf("Failed to enable versioning on bucket '%s': %w", bucket, err)
-  }
-  return nil
+	// create a non-init client
+	s3Client, err := initializeS3Client(config, false)
+	if err != nil {
+		return err
+	}
+	// ensure versioning is enabled on the bucket
+	_, err = s3Client.PutBucketVersioning(&s3.PutBucketVersioningInput{
+		Bucket: aws.String(bucket),
+		VersioningConfiguration: &s3.VersioningConfiguration{
+			Status: aws.String("Enabled"),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to enable versioning on bucket '%s': %w", bucket, err)
+	}
+	return nil
 }
 
 func CreateBucket(config config.Config, bucket string) error {
@@ -187,14 +187,14 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 }
 
 func ObjectExists(config config.Config, bucket string, key string) (bool, error) {
-  // Get a list of objects that are prefixed by the target key
-  objects, err := ListObjects(config, bucket, key)
+	// Get a list of objects that are prefixed by the target key
+	objects, err := ListObjects(config, bucket, key)
 	if err != nil {
 		return false, err
 	}
 
-  // return true if we got a non-zero number of objects that match the prefix
-  return len(objects) != 0, nil
+	// return true if we got a non-zero number of objects that match the prefix
+	return len(objects) != 0, nil
 }
 
 func GetObject(config config.Config, bucket string, key string) ([]byte, error) {
