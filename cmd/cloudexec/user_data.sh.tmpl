@@ -98,6 +98,10 @@ update_state() {
 # Set the trap to call the cleanup function on signals or exit
 trap cleanup EXIT SIGHUP SIGINT SIGTERM
 
+echo "Running setup..."
+mkdir -p ~/output
+eval "${SETUP_COMMANDS}"
+
 echo "Setting up DigitalOcean credentials..."
 # ensure these are set in the environment
 if [[ -z ${DIGITALOCEAN_ACCESS_TOKEN} ]]; then
@@ -151,10 +155,6 @@ if [[ ! -d ~/input ]]; then
 fi
 
 source ~/venv/bin/activate
-
-echo "Running setup..."
-mkdir -p ~/output
-eval "${SETUP_COMMANDS}"
 
 # Update state to running
 update_state "running"
