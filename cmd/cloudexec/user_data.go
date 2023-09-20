@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 
@@ -36,13 +37,14 @@ func GenerateUserData(config config.Config, lc LaunchConfig) (string, error) {
 	timeoutStr := fmt.Sprintf("%d", int(timeout.Seconds()))
 
 	// Set the values for the template
+  // double quotes are escaped so the command strings can be safely contained by double quotes in bash
 	data := UserData{
 		SpacesAccessKey:   config.DigitalOcean.SpacesAccessKey,
 		SpacesSecretKey:   config.DigitalOcean.SpacesSecretKey,
 		SpacesRegion:      config.DigitalOcean.SpacesRegion,
 		DigitalOceanToken: config.DigitalOcean.ApiKey,
-		SetupCommands:     lc.Commands.Setup,
-		RunCommand:        lc.Commands.Run,
+		SetupCommands:     strings.ReplaceAll(lc.Commands.Setup, `"`, `\"`),
+		RunCommand:       strings.ReplaceAll(lc.Commands.Run, `"`, `\"`),
 		Timeout:           timeoutStr,
 	}
 
