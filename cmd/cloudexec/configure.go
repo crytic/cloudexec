@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/config"
 	"golang.org/x/term"
 )
 

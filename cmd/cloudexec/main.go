@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
+	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/ssh"
+	"github.com/crytic/cloudexec/pkg/state"
 	"github.com/olekukonko/tablewriter"
-	do "github.com/trailofbits/cloudexec/pkg/digitalocean"
-	"github.com/trailofbits/cloudexec/pkg/ssh"
-	"github.com/trailofbits/cloudexec/pkg/state"
 	"github.com/urfave/cli/v2"
 )
 
@@ -38,7 +38,7 @@ func main() {
 
 	app := &cli.App{
 		Name:  "cloudexec",
-		Usage: "easily run cloud based fuzzing jobs",
+		Usage: "easily run cloud based jobs",
 		Commands: []*cli.Command{
 			{
 				Name:    "check",
@@ -65,7 +65,7 @@ func main() {
 			},
 			{
 				Name:    "init",
-				Usage:   "Initialize a cloud fuzzing environment",
+				Usage:   "Initialize the cloud environment",
 				Aliases: []string{"i"},
 				Action: func(*cli.Context) error {
 					// Abort on configuration error
@@ -93,7 +93,7 @@ func main() {
 			},
 			{
 				Name:    "launch",
-				Usage:   "Launch a droplet and start a fuzzing job",
+				Usage:   "Launch a droplet and start a job",
 				Aliases: []string{"l"},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
@@ -267,7 +267,7 @@ func main() {
 			},
 			{
 				Name:  "pull",
-				Usage: "Pulls down the results of the latest successful fuzzing job",
+				Usage: "Pulls down the results of the latest successful job",
 				Flags: []cli.Flag{
 					&cli.IntFlag{
 						Name:  "job",

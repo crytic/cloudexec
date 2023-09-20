@@ -9,8 +9,8 @@ import (
 	"github.com/digitalocean/godo"
 	"github.com/digitalocean/godo/util"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
-	"github.com/trailofbits/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 type Droplet struct {

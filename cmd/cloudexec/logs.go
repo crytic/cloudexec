@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
-	"github.com/trailofbits/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 func GetLogsFromBucket(config config.Config, jobID int, bucketName string) error {

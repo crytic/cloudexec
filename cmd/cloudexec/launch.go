@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/trailofbits/cloudexec/pkg/config"
-	do "github.com/trailofbits/cloudexec/pkg/digitalocean"
-	"github.com/trailofbits/cloudexec/pkg/s3"
-	"github.com/trailofbits/cloudexec/pkg/ssh"
-	"github.com/trailofbits/cloudexec/pkg/state"
+	"github.com/crytic/cloudexec/pkg/config"
+	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/ssh"
+	"github.com/crytic/cloudexec/pkg/state"
 )
 
 type Commands struct {

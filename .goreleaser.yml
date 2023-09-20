@@ -53,9 +53,7 @@ brews:
       owner: trailofbits
       name: homebrew-tools
       token: "{{ .Env.GITHUB_TOKEN }}"
-    homepage: https://github.com/trailofbits/cloudexec
-    download_strategy: GitHubPrivateReleaseDownloadStrategy
-    custom_require: lib/private
+    homepage: https://github.com/crytic/cloudexec
     folder: Formula
     install: |-
       bin.install "cloudexec"
@@ -69,4 +67,4 @@ brews:
         brew install --cask 1password-cli
 
       For more information on using 1Password CLI with CloudExec, visit:
-      https://github.com/trailofbits/cloudexec#configure-credentials
+      https://github.com/crytic/cloudexec#configure-credentials

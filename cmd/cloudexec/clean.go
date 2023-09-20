@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
-	do "github.com/trailofbits/cloudexec/pkg/digitalocean"
-	"github.com/trailofbits/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/config"
+	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 func ConfirmDeleteDroplets(config config.Config, userName string, instanceToJobs map[int64][]int64) error {

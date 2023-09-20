@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/trailofbits/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/config"
 )
 
 func getLaunchConfig(duration string) LaunchConfig {
