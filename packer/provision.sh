@@ -2,6 +2,9 @@
 # shellcheck source=/dev/null
 set -e
 
+########################################
+## Required Configuration and Dependencies
+
 # set hostname
 echo "Setting hostname..."
 echo "cloudexec" >/etc/hostname
@@ -21,6 +24,16 @@ mv /tmp/doctl /usr/local/bin
 echo "Cleaning up..."
 rm /tmp/doctl-1.92.0-linux-amd64.tar.gz
 
+########################################
+## Common fuzz testing and analysis tools
+
+echo "Installing solc and slither..."
+python3 -m venv ~/venv
+source ~/venv/bin/activate
+pip3 install solc-select slither-analyzer crytic-compile
+solc-select install 0.8.6
+solc-select use 0.8.6
+
 echo "Downloading echidna..."
 curl -fsSL -o /tmp/echidna.zip https://github.com/crytic/echidna/releases/download/v2.2.1/echidna-2.2.1-Linux.zip
 echo "Extracting echidna..."
@@ -30,12 +43,12 @@ echo "Installing echidna..."
 mv /tmp/echidna /usr/local/bin
 rm /tmp/echidna.tar.gz
 
-echo "Installing solc and slither..."
-python3 -m venv ~/venv
-source ~/venv/bin/activate
-pip3 install solc-select slither-analyzer crytic-compile
-solc-select install 0.8.6
-solc-select use 0.8.6
+echo "Downloading medusa..."
+sudo apt-get update; sudo apt-get install -y unzip
+curl -fsSL https://github.com/crytic/medusa/releases/download/v0.1.0/medusa-linux-x64.zip -o medusa.zip
+unzip medusa.zip
+chmod +x medusa
+sudo mv medusa /usr/local/bin
 
 echo "Installing docker and its dependencies..."
 apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
