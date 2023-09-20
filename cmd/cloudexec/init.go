@@ -29,8 +29,6 @@ func Init(config config.Config, bucket string) error {
     if err != nil {
       return fmt.Errorf("Failed to get %s bucket: %w", bucket, err)
     }
-  } else {
-    fmt.Printf("Using existing bucket %s\n", bucket)
   }
 
   // Ensure versioning is enabled, necessary if bucket creation was interrupted
@@ -45,7 +43,6 @@ func Init(config config.Config, bucket string) error {
     return fmt.Errorf("Failed to initialize state for bucket %s: %w", bucket, err)
   }
 
-	fmt.Printf("Initialized bucket %s\n", bucket)
 	return nil
 }
 
@@ -58,7 +55,7 @@ func initState(config config.Config, bucket string) error {
   }
   // Create the state directory if it does not already exist
   if !stateDirExists {
-    fmt.Printf("Creating new state directory at %s/%s", bucket, stateDir)
+    fmt.Printf("Creating new state directory at %s/%s\n", bucket, stateDir)
     err = s3.PutObject(config, bucket, stateDir, []byte{})
     if err != nil {
       return fmt.Errorf("Failed to create state directory at %s/%s: %w", bucket, stateDir, err)
@@ -73,6 +70,7 @@ func initState(config config.Config, bucket string) error {
   }
   // Create the initial state file if it does not already exist
   if !statePathExists {
+    fmt.Printf("Creating new state file at %s/%s\n", bucket, statePath)
     err = s3.PutObject(config, bucket, statePath, []byte("{}"))
     if err != nil {
       return fmt.Errorf("Failed to create state file in bucket %s: %w", bucket, err)
