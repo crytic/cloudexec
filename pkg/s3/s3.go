@@ -40,8 +40,7 @@ func initializeS3Client(config config.Config, init bool) (*s3.S3, error) {
 	// Unpack required config values
 	spacesAccessKey := config.DigitalOcean.SpacesAccessKey
 	spacesSecretKey := config.DigitalOcean.SpacesSecretKey
-	endpointRegion := config.DigitalOcean.SpacesRegion
-	endpoint := fmt.Sprintf("https://%s.digitaloceanspaces.com", endpointRegion)
+	endpoint := fmt.Sprintf("https://%s.digitaloceanspaces.com", config.DigitalOcean.SpacesRegion)
 
 	// Region must be "us-east-1" when creating new Spaces. Otherwise, use the region in your endpoint, such as "nyc3".
 	var spacesRegion string
@@ -59,19 +58,18 @@ func initializeS3Client(config config.Config, init bool) (*s3.S3, error) {
 		S3ForcePathStyle: aws.Bool(false),
 	}
 
-	fmt.Printf("Creating s3 client with init=%v | endpoint=%s | region=%s\n", init, endpoint, spacesRegion)
-
 	// Create a new session and S3 client
 	newSession, err := session.NewSession(spacesConfig)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create S3 client: %w", err)
 	}
 
-	// Cache client for subsequent usage iff not the client used for initialization
-	if !init {
-		s3Client = s3.New(newSession)
+	if init {
+		return s3.New(newSession), nil
 	}
 
+	// Cache client for subsequent usage iff not the client used for initialization
+	s3Client = s3.New(newSession)
 	return s3Client, nil
 }
 
