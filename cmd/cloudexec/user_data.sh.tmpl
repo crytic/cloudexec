@@ -135,7 +135,7 @@ if [[ ${JOB_ID} == "" ]]; then
 	echo "No job ID, exiting..."
 	exit 1
 fi
-export BUCKET_NAME="cloudexec-${USERNAME}-trailofbits"
+export BUCKET_NAME="cloudexec-${USERNAME}"
 
 echo "Setting up S3 credentials..."
 # Spaces uses the AWS S3 API

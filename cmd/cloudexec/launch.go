@@ -86,7 +86,7 @@ func LoadLaunchConfig(launchConfigPath string) (LaunchConfig, error) {
 
 func Launch(user *user.User, config config.Config, dropletSize string, dropletRegion string, lc LaunchConfig) error {
 	username := user.Username
-	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", username)
+	bucketName := fmt.Sprintf("cloudexec-%s", username)
 
 	// get existing state from bucket
 	fmt.Printf("Getting existing state from bucket %s...\n", bucketName)

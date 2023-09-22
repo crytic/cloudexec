@@ -32,7 +32,7 @@ func main() {
 	}
 	userName := user.Username
 	// TODO: sanitize username usage in bucketname
-	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", userName)
+	bucketName := fmt.Sprintf("cloudexec-%s", userName)
 
 	// Attempt to load the configuration
 	config, configErr := LoadConfig(configFilePath)
