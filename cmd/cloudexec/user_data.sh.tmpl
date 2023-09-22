@@ -22,6 +22,12 @@ stderr_log="/tmp/cloudexec-stderr.log"
 ########################################
 # Required setup
 
+# Wait for unattended-upgr to finish install/upgrading stuff in the background
+while fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+	echo "Waiting for unattended-upgr to finish..."
+	sleep 3
+done
+
 echo "Installing prereqs..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
@@ -65,6 +71,9 @@ for tag in ${TAGS}; do
 		JOB_ID=${tag#"Job:"}
 	fi
 done
+
+export BUCKET_NAME="cloudexec-${USERNAME}"
+echo "Using bucket ${BUCKET_NAME}"
 
 echo "Setting up DigitalOcean credentials..."
 # ensure these are set in the environment
@@ -185,8 +194,6 @@ trap cleanup EXIT SIGHUP SIGINT SIGTERM
 echo "Running setup..."
 mkdir -p ~/output
 eval "${SETUP_COMMANDS}"
-
-export BUCKET_NAME="cloudexec-${USERNAME}"
 
 echo "Downloading inputs..."
 s3cmd get -r "s3://${BUCKET_NAME}/job-${JOB_ID}/input" ~/
