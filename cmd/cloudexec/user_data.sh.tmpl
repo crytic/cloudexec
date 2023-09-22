@@ -28,7 +28,8 @@ apt-get update
 apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip
 
 # set hostname
-if [[ "$(hostname)" != "cloudexec" ]]; then
+current_hostname="$(hostname)"
+if [[ ${current_hostname} != "cloudexec" ]]; then
 	echo "Setting hostname..."
 	echo "cloudexec" >/etc/hostname
 	hostname -F /etc/hostname
