@@ -4,32 +4,6 @@ timeout = "48h"
 
 [commands]
 setup = '''
-
-########################################
-## Required Configuration and Dependencies
-
-# set hostname
-echo "Setting hostname..."
-echo "cloudexec" >/etc/hostname
-hostname -F /etc/hostname
-
-echo "Installing prereqs..."
-export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip
-
-echo "Downloading doctl..."
-curl -fsSL -o /tmp/doctl-1.92.0-linux-amd64.tar.gz https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz
-echo "Extracting doctl..."
-tar -xzf /tmp/doctl-1.92.0-linux-amd64.tar.gz -C /tmp
-echo "Installing doctl..."
-mv /tmp/doctl /usr/local/bin
-echo "Cleaning up..."
-rm /tmp/doctl-1.92.0-linux-amd64.tar.gz
-
-########################################
-## Common fuzz testing and analysis tools
-
 echo "Installing solc and slither..."
 python3 -m venv ~/venv
 source ~/venv/bin/activate
