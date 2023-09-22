@@ -33,7 +33,7 @@ var s3Client *s3.S3
 // Note: not safe to use concurrently from multiple goroutines (yet)
 func initializeS3Client(config config.Config, init bool) (*s3.S3, error) {
 	// Immediately return our cached client if available
-	if s3Client != nil {
+	if !init && s3Client != nil {
 		return s3Client, nil
 	}
 
@@ -41,6 +41,7 @@ func initializeS3Client(config config.Config, init bool) (*s3.S3, error) {
 	spacesAccessKey := config.DigitalOcean.SpacesAccessKey
 	spacesSecretKey := config.DigitalOcean.SpacesSecretKey
 	endpointRegion := config.DigitalOcean.SpacesRegion
+	endpoint := fmt.Sprintf("https://%s.digitaloceanspaces.com", endpointRegion)
 
 	// Region must be "us-east-1" when creating new Spaces. Otherwise, use the region in your endpoint, such as "nyc3".
 	var spacesRegion string
@@ -53,10 +54,12 @@ func initializeS3Client(config config.Config, init bool) (*s3.S3, error) {
 	// Configure the Spaces client
 	spacesConfig := &aws.Config{
 		Credentials:      credentials.NewStaticCredentials(spacesAccessKey, spacesSecretKey, ""),
-		Endpoint:         aws.String(fmt.Sprintf("https://%s.digitaloceanspaces.com", endpointRegion)),
+		Endpoint:         aws.String(endpoint),
 		Region:           aws.String(spacesRegion),
 		S3ForcePathStyle: aws.Bool(false),
 	}
+
+	fmt.Printf("Creating s3 client with init=%v | endpoint=%s | region=%s\n", init, endpoint, spacesRegion)
 
 	// Create a new session and S3 client
 	newSession, err := session.NewSession(spacesConfig)
@@ -121,13 +124,10 @@ func CreateBucket(config config.Config, bucket string) error {
 		return err
 	}
 
-	// craft bucket creation request
-	createBucketInput := &s3.CreateBucketInput{
-		Bucket: aws.String(bucket),
-	}
-
 	// execution bucket creation
-	_, err = s3Client.CreateBucket(createBucketInput)
+	_, err = s3Client.CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(bucket),
+	})
 	if err != nil {
 		return fmt.Errorf("Failed to create bucket '%s': %w", bucket, err)
 	}

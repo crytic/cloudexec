@@ -27,7 +27,7 @@ func Init(config config.Config, bucket string) error {
 		fmt.Printf("Creating new %s bucket...\n", bucket)
 		err = s3.CreateBucket(config, bucket)
 		if err != nil {
-			return fmt.Errorf("Failed to get %s bucket: %w", bucket, err)
+			return err
 		}
 	}
 

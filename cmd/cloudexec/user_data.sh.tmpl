@@ -28,23 +28,21 @@ apt-get update
 apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip
 
 # set hostname
-if [[ "$(hostname)" != "cloudexec" ]]
-then
-  echo "Setting hostname..."
-  echo "cloudexec" >/etc/hostname
-  hostname -F /etc/hostname
+if [[ "$(hostname)" != "cloudexec" ]]; then
+	echo "Setting hostname..."
+	echo "cloudexec" >/etc/hostname
+	hostname -F /etc/hostname
 fi
 
-if ! command -v doctl >/dev/null 2>&1
-then
-  echo "Downloading doctl..."
-  curl -fsSL -o /tmp/doctl-1.92.0-linux-amd64.tar.gz https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz
-  echo "Extracting doctl..."
-  tar -xzf /tmp/doctl-1.92.0-linux-amd64.tar.gz -C /tmp
-  echo "Installing doctl..."
-  mv /tmp/doctl /usr/local/bin
-  echo "Cleaning up..."
-  rm /tmp/doctl-1.92.0-linux-amd64.tar.gz
+if ! command -v doctl >/dev/null 2>&1; then
+	echo "Downloading doctl..."
+	curl -fsSL -o /tmp/doctl-1.92.0-linux-amd64.tar.gz https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz
+	echo "Extracting doctl..."
+	tar -xzf /tmp/doctl-1.92.0-linux-amd64.tar.gz -C /tmp
+	echo "Installing doctl..."
+	mv /tmp/doctl /usr/local/bin
+	echo "Cleaning up..."
+	rm /tmp/doctl-1.92.0-linux-amd64.tar.gz
 fi
 
 ########################################
