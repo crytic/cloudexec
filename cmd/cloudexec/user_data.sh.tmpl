@@ -4,6 +4,9 @@
 set -e
 shopt -s inherit_errexit
 
+########################################
+# Setup env vars and constants
+
 # Import env vars from user data
 export DIGITALOCEAN_ACCESS_TOKEN={{.DigitalOceanToken}}
 export AWS_ACCESS_KEY_ID={{.SpacesAccessKey}}
@@ -15,6 +18,93 @@ export TIMEOUT="{{.Timeout}}"
 
 stdout_log="/tmp/cloudexec-stdout.log"
 stderr_log="/tmp/cloudexec-stderr.log"
+
+########################################
+# Required setup
+
+# Wait for unattended-upgr to finish install/upgrading stuff in the background
+while fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+	echo "Waiting for unattended-upgr to finish..."
+	sleep 3
+done
+
+echo "Installing prereqs..."
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip
+
+# set hostname
+current_hostname="$(hostname)"
+if [[ ${current_hostname} != "cloudexec" ]]; then
+	echo "Setting hostname..."
+	echo "cloudexec" >/etc/hostname
+	hostname -F /etc/hostname
+fi
+
+if ! command -v doctl >/dev/null 2>&1; then
+	echo "Downloading doctl..."
+	curl -fsSL -o /tmp/doctl-1.92.0-linux-amd64.tar.gz https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz
+	echo "Extracting doctl..."
+	tar -xzf /tmp/doctl-1.92.0-linux-amd64.tar.gz -C /tmp
+	echo "Installing doctl..."
+	mv /tmp/doctl /usr/local/bin
+	echo "Cleaning up..."
+	rm /tmp/doctl-1.92.0-linux-amd64.tar.gz
+fi
+
+########################################
+# Confirm required env vars are present
+
+echo "Confirming this is a CloudExec droplet..."
+TAGS=$(curl -s http://169.254.169.254/metadata/v1/tags)
+echo "Droplet tags:"
+echo "${TAGS}"
+export JOB_ID=""
+export USERNAME=""
+export CLOUDEXEC=false
+for tag in ${TAGS}; do
+	if [[ ${tag} == "Purpose:cloudexec" ]]; then
+		CLOUDEXEC=true
+	elif [[ ${tag} == "Owner:"* ]]; then
+		USERNAME=${tag#"Owner:"}
+	elif [[ ${tag} == "Job:"* ]]; then
+		JOB_ID=${tag#"Job:"}
+	fi
+done
+
+export BUCKET_NAME="cloudexec-${USERNAME}"
+echo "Using bucket ${BUCKET_NAME}"
+
+echo "Setting up DigitalOcean credentials..."
+# ensure these are set in the environment
+if [[ -z ${DIGITALOCEAN_ACCESS_TOKEN} ]]; then
+	echo "ERROR: DIGITALOCEAN_ACCESS_TOKEN is not set"
+	echo "CloudExec will not be able to destroy the droplet"
+	echo "on exit and you will incur charges."
+	exit 1
+fi
+
+echo "Setting up S3 credentials..."
+# Spaces uses the AWS S3 API
+for var in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION; do
+	if [[ -z ${!var} ]]; then
+		echo "${var} is not set, exiting..."
+		exit 1
+	fi
+done
+
+if [[ ${CLOUDEXEC} == false ]] || [[ ${USERNAME} == "" ]]; then
+	echo "Not a CloudExec droplet, exiting..."
+	# exit 1
+fi
+
+if [[ ${JOB_ID} == "" ]]; then
+	echo "No job ID, exiting..."
+	exit 1
+fi
+
+########################################
+# Define helper functions
 
 fmtDate() {
 	date -d "@$1" "+%Y-%m-%d %H:%M:%S"
@@ -98,49 +188,12 @@ update_state() {
 # Set the trap to call the cleanup function on signals or exit
 trap cleanup EXIT SIGHUP SIGINT SIGTERM
 
-echo "Setting up DigitalOcean credentials..."
-# ensure these are set in the environment
-if [[ -z ${DIGITALOCEAN_ACCESS_TOKEN} ]]; then
-	echo "ERROR: DIGITALOCEAN_ACCESS_TOKEN is not set"
-	echo "CloudExec will not be able to destroy the droplet"
-	echo "on exit and you will incur charges."
-	exit 1
-fi
+########################################
+# Job-specific setup
 
-echo "Confirming this is a CloudExec droplet..."
-TAGS=$(curl -s http://169.254.169.254/metadata/v1/tags)
-echo "Droplet tags:"
-echo "${TAGS}"
-export JOB_ID=""
-export USERNAME=""
-export CLOUDEXEC=false
-for tag in ${TAGS}; do
-	if [[ ${tag} == "Purpose:cloudexec" ]]; then
-		CLOUDEXEC=true
-	elif [[ ${tag} == "Owner:"* ]]; then
-		USERNAME=${tag#"Owner:"}
-	elif [[ ${tag} == "Job:"* ]]; then
-		JOB_ID=${tag#"Job:"}
-	fi
-done
-if [[ ${CLOUDEXEC} == false ]] || [[ ${USERNAME} == "" ]]; then
-	echo "Not a CloudExec droplet, exiting..."
-	# exit 1
-fi
-if [[ ${JOB_ID} == "" ]]; then
-	echo "No job ID, exiting..."
-	exit 1
-fi
-export BUCKET_NAME="cloudexec-${USERNAME}-trailofbits"
-
-echo "Setting up S3 credentials..."
-# Spaces uses the AWS S3 API
-for var in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION; do
-	if [[ -z ${!var} ]]; then
-		echo "${var} is not set, exiting..."
-		exit 1
-	fi
-done
+echo "Running setup..."
+mkdir -p ~/output
+eval "${SETUP_COMMANDS}"
 
 echo "Downloading inputs..."
 s3cmd get -r "s3://${BUCKET_NAME}/job-${JOB_ID}/input" ~/
@@ -152,15 +205,14 @@ fi
 
 source ~/venv/bin/activate
 
-echo "Running setup..."
-mkdir -p ~/output
-eval "${SETUP_COMMANDS}"
-
 # Update state to running
 update_state "running"
 
 # Create a temporary file to track the completion of the task
 exit_code_flag="/tmp/cloudexec-exit-code"
+
+########################################
+# Execute Job
 
 # Use Ctrl-C to detach from the tmux session
 echo "bind-key -n C-c detach" >~/.tmux.conf
@@ -181,6 +233,9 @@ pretty_start_time="$(fmtDate "${start_time}")"
 end_time=$(("${start_time}" + TIMEOUT))
 pretty_end_time="$(fmtDate "${end_time}")"
 echo "Workload is running, timer started at ${pretty_start_time}, we'll time out at ${pretty_end_time}"
+
+########################################
+# Wait for job to finish
 
 # Wait for the temporary file to be created
 while true; do

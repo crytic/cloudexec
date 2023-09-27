@@ -302,7 +302,10 @@ func GetLatestSnapshot(config config.Config) (Snapshot, error) {
 	}
 
 	if latestSnapshot == nil {
-		return empty, fmt.Errorf("Failed to find cloudexec snapshot")
+		return Snapshot{
+			ID:   "ubuntu-22-04-x64",
+			Name: "default",
+		}, nil
 	}
 
 	return Snapshot{

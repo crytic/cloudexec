@@ -45,7 +45,7 @@ signs:
 
 release:
   github:
-    owner: trailofbits
+    owner: crytic
     name: cloudexec
 
 brews:

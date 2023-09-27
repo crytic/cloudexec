@@ -31,7 +31,8 @@ func main() {
 		os.Exit(1)
 	}
 	userName := user.Username
-	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", userName)
+	// TODO: sanitize username usage in bucketname
+	bucketName := fmt.Sprintf("cloudexec-%s", userName)
 
 	// Attempt to load the configuration
 	config, configErr := LoadConfig(configFilePath)
@@ -60,23 +61,6 @@ func main() {
 						return err
 					}
 					fmt.Printf("Using CloudExec image: %s\n", snap.Name)
-					return nil
-				},
-			},
-			{
-				Name:    "init",
-				Usage:   "Initialize the cloud environment",
-				Aliases: []string{"i"},
-				Action: func(*cli.Context) error {
-					// Abort on configuration error
-					if configErr != nil {
-						return configErr
-					}
-
-					err = Init(userName, config)
-					if err != nil {
-						return err
-					}
 					return nil
 				},
 			},
@@ -148,6 +132,12 @@ func main() {
 					dropletSize := c.String("size")
 					dropletRegion := c.String("region")
 
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
+					}
+
 					fmt.Printf("Launching a %s droplet in the %s region\n", dropletSize, dropletRegion)
 					err = Launch(user, config, dropletSize, dropletRegion, lc)
 					if err != nil {
@@ -170,6 +160,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
 					}
 
 					existingState, err := state.GetState(config, bucketName)
@@ -204,6 +200,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
 					}
 
 					instanceToJobs, err := state.GetJobIdsByInstance(config, bucketName)
@@ -242,6 +244,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
 					}
 
 					instanceToJobs, err := state.GetJobIdsByInstance(config, bucketName)
@@ -287,6 +295,12 @@ func main() {
 						return configErr
 					}
 
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
+					}
+
 					existingState, err := state.GetState(config, bucketName)
 					if err != nil {
 						return err
@@ -327,6 +341,12 @@ func main() {
 					// Abort on configuration error
 					if configErr != nil {
 						return configErr
+					}
+
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
 					}
 
 					existingState, err := state.GetState(config, bucketName)
@@ -392,6 +412,12 @@ func main() {
 								return configErr
 							}
 
+							// Initialize the s3 state
+							err = Init(config, bucketName)
+							if err != nil {
+								return err
+							}
+
 							// Retrieve existing state
 							existingState, err := state.GetState(config, bucketName)
 							if err != nil {
@@ -412,6 +438,12 @@ func main() {
 							// Abort on configuration error
 							if configErr != nil {
 								return configErr
+							}
+
+							// Initialize the s3 state
+							err = Init(config, bucketName)
+							if err != nil {
+								return err
 							}
 
 							jobID := c.Args().First() // Get the job ID from the arguments
@@ -449,6 +481,12 @@ func main() {
 								return configErr
 							}
 
+							// Initialize the s3 state
+							err = Init(config, bucketName)
+							if err != nil {
+								return err
+							}
+
 							// Retrieve existing state
 							existingState, err := state.GetState(config, bucketName)
 							if err != nil {
@@ -474,6 +512,13 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+
+					// Initialize the s3 state
+					err = Init(config, bucketName)
+					if err != nil {
+						return err
+					}
+
 					// First check if there's a running job
 					existingState, err := state.GetState(config, bucketName)
 					if err != nil {

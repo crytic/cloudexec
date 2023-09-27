@@ -111,12 +111,6 @@ Confirm `cloudexec` has access to DigitalOcean.
 cloudexec check
 ```
 
-### Initialize your CloudExec environment
-
-```bash
-cloudexec init
-```
-
 ### Launch a new remote job
 
 Generate a cloudexec.toml configuration file in the current directory.
@@ -195,3 +189,17 @@ cloudexec clean
 ```
 
 Note that there is often a delay while deleting files from Digital Ocean Spaces buckets.
+
+## Optional: Create a CloudExec DigitalOcean image
+
+Building and uploading a dedicated DigitalOcean image for `cloudexec` will simplify your launch configuration and improve startup times.
+
+To do so, install `packer` with `brew install packer`. If you're using `nix` and `direnv`, it's added to your PATH via the flake's dev shell.
+
+To build and upload a docker image, run the following command. Make sure your DigitalOcean API key is either in your env vars or replace it with the actual token.
+
+`packer build -var do_api_token=$DIGITALOCEAN_API_KEY cloudexec.pkr.hcl`
+
+This will take care of everything and if you visit the [DigitalOcean snapshots page](https://cloud.digitalocean.com/images/snapshots/droplets), you'll see a snapshot called `cloudexec-20230920164605` or similar. `cloudexec` will search for snapshots starts with a `cloudexec-` prefix and it will use the one with the most recent timestamp string.
+
+Now, you can remove everything from the setup command in the example launch config or replace it to install additional tools.

@@ -11,7 +11,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/crytic/cloudexec/pkg/config"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
-	"github.com/crytic/cloudexec/pkg/s3"
 	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
 )
@@ -87,13 +86,7 @@ func LoadLaunchConfig(launchConfigPath string) (LaunchConfig, error) {
 
 func Launch(user *user.User, config config.Config, dropletSize string, dropletRegion string, lc LaunchConfig) error {
 	username := user.Username
-	bucketName := fmt.Sprintf("cloudexec-%s-trailofbits", username)
-
-	fmt.Printf("Getting or creating new bucket for %s...\n", username)
-	err := s3.GetOrCreateBucket(config, username)
-	if err != nil {
-		return fmt.Errorf("Failed to get bucket for %s: %w", username, err)
-	}
+	bucketName := fmt.Sprintf("cloudexec-%s", username)
 
 	// get existing state from bucket
 	fmt.Printf("Getting existing state from bucket %s...\n", bucketName)
