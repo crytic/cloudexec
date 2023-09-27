@@ -1,7 +1,8 @@
 .direnv/
 .env
+.vscode
 .vscode/
 bin/
 dist/
+example/input.zip
 result
-.vscode
