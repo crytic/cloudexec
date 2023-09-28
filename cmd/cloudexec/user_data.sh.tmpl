@@ -126,13 +126,12 @@ cleanup() {
 		update_state "failed"
 	fi
 
-	echo "Uploading results..."
-	# shellcheck disable=SC2310
-	s3cmd put -r ~/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/" || true # proceed to destroy droplet on error
-
-	echo "Uploading logs..."
-	# shellcheck disable=SC2310
-	s3cmd put /var/log/cloud-init-output.log "s3://${BUCKET_NAME}/job-${JOB_ID}/logs/" || true # proceed to destroy droplet on error
+  if [ -n "$(ls -A ~/output/)" ]; then
+    echo "Uploading results..."
+    s3cmd put -r ~/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/" || true # proceed to destroy droplet on error
+  else
+    echo "Skipping results upload, no files found in ~/ouput"
+  fi
 
 	if [[ -s ${stdout_log} ]]; then
 		echo
@@ -149,6 +148,13 @@ cleanup() {
 	else
 		echo "No error logs generated"
 	fi
+
+	if [[ -s "/var/log/cloud-init-output.log" ]]; then
+    echo "Uploading logs..."
+    s3cmd put /var/log/cloud-init-output.log "s3://${BUCKET_NAME}/job-${JOB_ID}/logs/"
+  else
+    echo "No logs to upload.."
+  fi
 
 	echo
 	echo "Destroying droplet..."
@@ -195,11 +201,22 @@ echo "Running setup..."
 mkdir -p ~/output
 eval "${SETUP_COMMANDS}"
 
-echo "Downloading inputs..."
-s3cmd get -r "s3://${BUCKET_NAME}/job-${JOB_ID}/input" ~/
+echo "Downloading input archive..."
+s3cmd get -r "s3://${BUCKET_NAME}/job-${JOB_ID}/input.zip" ~/
+if [[ ! -s ~/input.zip ]]; then
+	echo "Error: Failed to download input archive"
+	exit 1
+fi
 
+echo "Unzipping input archive..."
+ls -l ~/
+ls -l ~/input.zip
+xxd ~/input.zip | head -n 10
+unzip ~/input.zip -d ~/
+ls ~/
+ls ~/input
 if [[ ! -d ~/input ]]; then
-	echo "Error: Failed to download inputs directory"
+	echo "Error: Failed to unzip inputs directory"
 	exit 1
 fi
 
