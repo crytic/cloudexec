@@ -159,7 +159,7 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 		if err != nil {
 			return fmt.Errorf("Failed to create %s directory in bucket %s: %w", key, bucket, err)
 		}
-    fmt.Printf("Successfully created directory in s3 bucket: %s/%s\n", bucket, key)
+		fmt.Printf("Successfully created directory in s3 bucket: %s/%s\n", bucket, key)
 		return nil
 	}
 
@@ -181,7 +181,7 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 		return fmt.Errorf("Failed to upload file %s to bucket %s: %w", key, bucket, err)
 	}
 
-  fmt.Printf("Successfully uploaded file to s3 bucket: %s/%s\n", bucket, key)
+	fmt.Printf("Successfully uploaded file to s3 bucket: %s/%s\n", bucket, key)
 	return nil
 }
 

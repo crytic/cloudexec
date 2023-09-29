@@ -126,12 +126,13 @@ cleanup() {
 		update_state "failed"
 	fi
 
-  if [ -n "$(ls -A ~/output/)" ]; then
-    echo "Uploading results..."
-    s3cmd put -r ~/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/" || true # proceed to destroy droplet on error
-  else
-    echo "Skipping results upload, no files found in ~/ouput"
-  fi
+	output_files="$(ls -A ~/output/)"
+	if [[ -n ${output_files} ]]; then
+		echo "Uploading results..."
+		s3cmd put -r ~/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
+	else
+		echo "Skipping results upload, no files found in ~/ouput"
+	fi
 
 	if [[ -s ${stdout_log} ]]; then
 		echo
@@ -150,11 +151,11 @@ cleanup() {
 	fi
 
 	if [[ -s "/var/log/cloud-init-output.log" ]]; then
-    echo "Uploading logs..."
-    s3cmd put /var/log/cloud-init-output.log "s3://${BUCKET_NAME}/job-${JOB_ID}/logs/"
-  else
-    echo "No logs to upload.."
-  fi
+		echo "Uploading logs..."
+		s3cmd put /var/log/cloud-init-output.log "s3://${BUCKET_NAME}/job-${JOB_ID}/logs/"
+	else
+		echo "No logs to upload.."
+	fi
 
 	echo
 	echo "Destroying droplet..."
@@ -209,9 +210,9 @@ if [[ ! -s ~/input.zip ]]; then
 fi
 
 echo "Unzipping input archive..."
-ls -l ~/
-ls -l ~/input.zip
-xxd ~/input.zip | head -n 10
+#ls -l ~/
+#ls -l ~/input.zip
+#xxd ~/input.zip | head -n 10
 unzip ~/input.zip -d ~/
 ls ~/
 ls ~/input
