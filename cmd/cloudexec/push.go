@@ -81,10 +81,12 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 	if err != nil {
 		return err
 	}
+	zipWriter.Close()
 	err = zipFile.Sync()
 	if err != nil {
 		return err
 	}
+	zipFile.Close()
 
 	// Read the zipped archive
 	fileBytes, err := os.ReadFile(zipFilePath)
