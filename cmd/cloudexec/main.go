@@ -75,6 +75,17 @@ func main() {
 					return nil
 				},
 			},
+      {
+        Name:  "init",
+        Usage: "Create a new cloudexec.toml launch configuration in the current directory",
+        Action: func(c *cli.Context) error {
+          err := InitLaunchConfig()
+          if err != nil {
+            return err
+          }
+          return nil
+        },
+      },
 			{
 				Name:    "launch",
 				Usage:   "Launch a droplet and start a job",
@@ -93,19 +104,6 @@ func main() {
 						Name:  "region",
 						Value: "nyc3", // Default droplet region
 						Usage: "Optional droplet region",
-					},
-				},
-				Subcommands: []*cli.Command{
-					{
-						Name:  "init",
-						Usage: "Create a new cloudexec.toml launch configuration in the current directory",
-						Action: func(c *cli.Context) error {
-							err := InitLaunchConfig()
-							if err != nil {
-								return err
-							}
-							return nil
-						},
 					},
 				},
 				Action: func(c *cli.Context) error {
