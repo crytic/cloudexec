@@ -20,7 +20,7 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 	}
 
 	// Create a file where we will write the zipped archive
-  fmt.Printf("Creating zipped archive at %s\n", zipFilePath)
+	fmt.Printf("Creating zipped archive at %s\n", zipFilePath)
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
 		return err
@@ -33,26 +33,26 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 
 	// Walk the directory and recursively add files to the zipped archive
 	err = filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
-    target := path
+		target := path
 		if err != nil {
 			return err
 		}
 
-    // If it's a symbolic link, resolve the target
-    if info.Mode()&os.ModeSymlink == os.ModeSymlink {
-      target, err := os.Readlink(path)
-      fmt.Printf("Resolved link from %s to %s\n", path, target)
-      if err != nil {
-        return err
-      }
-    }
+		// If it's a symbolic link, resolve the target
+		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
+			target, err := os.Readlink(path)
+			fmt.Printf("Resolved link from %s to %s\n", path, target)
+			if err != nil {
+				return err
+			}
+		}
 
 		// If this is a subdirectory, make sure the path ends with a trailing slash before we create it
 		// See https://pkg.go.dev/archive/zip#Writer.Create for details
-    targetInfo, err := os.Stat(target)
-    if err != nil {
-      return err
-    }
+		targetInfo, err := os.Stat(target)
+		if err != nil {
+			return err
+		}
 
 		if targetInfo.IsDir() {
 			cleanPath := filepath.Clean(path) + string(filepath.Separator)
@@ -64,11 +64,10 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 			return nil
 		}
 
-
-    // Don't recursively add this zipped archive
-    if filepath.Base(path) == zipFileName {
-      return nil
-    }
+		// Don't recursively add this zipped archive
+		if filepath.Base(path) == zipFileName {
+			return nil
+		}
 
 		fmt.Printf("Adding %s to the zipped archive\n", target)
 
