@@ -14,10 +14,7 @@ import (
 func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath string, destPath string) error {
 	// Compute the path for the zipped archive of sourcePath
 	zipFileName := "input.zip"
-	zipFilePath, err := filepath.Abs(filepath.Join(filepath.Dir(sourcePath), zipFileName))
-	if err != nil {
-		return err
-	}
+	zipFilePath := filepath.Join(os.TempDir(), zipFileName)
 
 	// Create a file where we will write the zipped archive
 	fmt.Printf("Creating zipped archive at %s\n", zipFilePath)
@@ -40,7 +37,7 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 
 		// If it's a symbolic link, resolve the target
 		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
-			target, err := os.Readlink(path)
+			target, err = os.Readlink(path)
 			fmt.Printf("Resolved link from %s to %s\n", path, target)
 			if err != nil {
 				return err
@@ -57,7 +54,7 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 		if targetInfo.IsDir() {
 			cleanPath := filepath.Clean(path) + string(filepath.Separator)
 			fmt.Printf("Creating directory %s in the zipped archive\n", cleanPath)
-			_, err := zipWriter.Create(cleanPath)
+			_, err = zipWriter.Create(cleanPath)
 			if err != nil {
 				return err
 			}
@@ -82,7 +79,6 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 		if err != nil {
 			return err
 		}
-		defer file.Close()
 
 		// Write this file to the zipped archive
 		_, err = io.Copy(zipFileEntry, file)
@@ -90,6 +86,7 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 			return err
 		}
 
+		file.Close()
 		return nil
 	})
 	if err != nil {
@@ -98,16 +95,18 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 	fmt.Printf("Successfully added all files from %s to zipped archive at %s\n", sourcePath, zipFilePath)
 
 	// Make sure all prior writes are sync'd to the filesystem
-	// This is necessary because we're going to read the file immediately after writing it
+	// This is necessary bc we're going to read the file right after writing it
 	err = zipWriter.Flush()
 	if err != nil {
 		return err
 	}
-	zipWriter.Close()
 	err = zipFile.Sync()
 	if err != nil {
 		return err
 	}
+
+	// Manually Closing is necessary to prevent zip file corruption during upload
+	zipWriter.Close()
 	zipFile.Close()
 
 	// Read the zipped archive
