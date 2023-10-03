@@ -80,18 +80,17 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 			return err
 		}
 
-		// Explicitly close the file once we're done to prevent a "too many open files" error
-		err = file.Close()
-		if err != nil {
-			return err
-		}
-
 		// Write this file to the zipped archive
 		_, err = io.Copy(zipFileEntry, file)
 		if err != nil {
 			return err
 		}
-		file.Close()
+
+		// Explicitly close the file once we're done to prevent a "too many open files" error
+		err = file.Close()
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
