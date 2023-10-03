@@ -19,7 +19,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 
     // Print the status of each job using tablewriter
     table := tablewriter.NewWriter(os.Stdout)
-    table.SetHeader([]string{"Job ID", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Monthly Cost", "Hourly Cost", "Started At", "Updated At", "Completed At"})
+    table.SetHeader([]string{"Job ID", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Monthly Cost", "Hourly Cost", "Started At", "Updated At", "Completed At", "Total Cost"})
 
     formatDate := func(timestamp int64) string {
       if timestamp == 0 {
@@ -33,7 +33,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
     }
 
     formatFloat := func(f float64) string {
-      return strconv.FormatFloat(f, 'f', -1, 64)
+      return strconv.FormatFloat(f, 'f', 4, 64)
     }
 
     // Find the latest completed job
@@ -44,24 +44,30 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 
     for _, job := range existingState.Jobs {
       if showAll || (job.Status == state.Running || job.Status == state.Provisioning) || (latestCompletedJob != nil && job.ID == latestCompletedJob.ID) {
-        droplet, err := do.GetDropletById(config, job.InstanceID)
-        if err != nil {
-          return err
-        }
+
+        latestUpdate := func() int64 {
+          if job.CompletedAt == 0 {
+            return job.UpdatedAt
+          }
+          return job.CompletedAt
+        }()
+        totalCost := float64(latestUpdate - job.StartedAt) / float64(3600) * job.Droplet.Cost.Hourly
 
         table.Append([]string{
           strconv.Itoa(int(job.ID)),
           string(job.Status),
-          droplet.IP,
-          formatInt(droplet.Size.Memory),
-          formatInt(droplet.Size.CPUs),
-          formatInt(droplet.Size.Disk),
-          formatFloat(droplet.Cost.Monthly),
-          formatFloat(droplet.Cost.Hourly),
+          job.Droplet.IP,
+          formatInt(job.Droplet.Size.Memory) + " MB",
+          formatInt(job.Droplet.Size.CPUs),
+          formatInt(job.Droplet.Size.Disk) + " GB",
+          "$" + formatFloat(job.Droplet.Cost.Monthly),
+          "$" + formatFloat(job.Droplet.Cost.Hourly),
           formatDate(job.StartedAt),
           formatDate(job.UpdatedAt),
           formatDate(job.CompletedAt),
+          "$" + formatFloat(totalCost),
         })
+
       }
     }
 
