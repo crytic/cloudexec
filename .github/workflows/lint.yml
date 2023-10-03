@@ -28,7 +28,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: coderabbitai/ai-pr-reviewer@d7f9486e8bfddc6e55f9879d4e93b8eaac6f120f # v1.16.0
+      - uses: coderabbitai/ai-pr-reviewer@44244a9e06f5acf72a93f661c7dbb8d8d808143d # v1.16.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
