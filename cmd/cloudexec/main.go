@@ -31,6 +31,7 @@ func main() {
 	username := user.Username
 	// TODO: sanitize username usage in bucketname
 	bucketName := fmt.Sprintf("cloudexec-%s", username)
+  dropletName := fmt.Sprintf("cloudexec-%v", username)
 
 	// Attempt to load the configuration
 	config, configErr := LoadConfig(configFilePath)
@@ -209,7 +210,7 @@ func main() {
 						return err
 					}
 
-					err = ConfirmDeleteDroplets(config, username, instanceToJobs)
+					err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
