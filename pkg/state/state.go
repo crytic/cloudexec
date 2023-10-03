@@ -7,6 +7,7 @@ import (
 
 	"github.com/crytic/cloudexec/pkg/config"
 	"github.com/crytic/cloudexec/pkg/s3"
+	do "github.com/crytic/cloudexec/pkg/digitalocean"
 )
 
 type JobStatus string
@@ -27,10 +28,9 @@ type JobInfo struct {
 	StartedAt   int64     `json:"started_at"` // Unix timestamp
 	CompletedAt int64     `json:"completed_at"`
 	UpdatedAt   int64     `json:"updated_at"`
-	InstanceID  int64     `json:"instance_id"`
 	Status      JobStatus `json:"status"`
-	InstanceIP  string    `json:"instance_ip"`
 	Delete      bool
+  Droplet     do.Droplet   `json:"droplet"`
 }
 
 type State struct {
@@ -210,7 +210,7 @@ func GetJobIdsByInstance(config config.Config, bucketName string) (map[int64][]i
 		return instanceToJobIds, nil
 	}
 	for _, job := range existingState.Jobs {
-		instanceToJobIds[job.InstanceID] = append(instanceToJobIds[job.InstanceID], job.ID)
+		instanceToJobIds[job.Droplet.ID] = append(instanceToJobIds[job.Droplet.ID], job.ID)
 	}
 	return instanceToJobIds, nil
 }

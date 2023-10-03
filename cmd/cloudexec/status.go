@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	do "github.com/crytic/cloudexec/pkg/digitalocean"
 	"github.com/olekukonko/tablewriter"
 	"github.com/crytic/cloudexec/pkg/config"
 	"github.com/crytic/cloudexec/pkg/state"
