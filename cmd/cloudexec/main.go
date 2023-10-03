@@ -7,12 +7,10 @@ import (
 	"os"
 	"os/user"
 	"strconv"
-	"time"
 
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
 	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
-	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli/v2"
 )
 
@@ -30,9 +28,9 @@ func main() {
 		fmt.Printf("Failed to get current user: %v", err)
 		os.Exit(1)
 	}
-	userName := user.Username
+	username := user.Username
 	// TODO: sanitize username usage in bucketname
-	bucketName := fmt.Sprintf("cloudexec-%s", userName)
+	bucketName := fmt.Sprintf("cloudexec-%s", username)
 
 	// Attempt to load the configuration
 	config, configErr := LoadConfig(configFilePath)
@@ -211,7 +209,7 @@ func main() {
 						return err
 					}
 
-					err = ConfirmDeleteDroplets(config, userName, instanceToJobs)
+					err = ConfirmDeleteDroplets(config, username, instanceToJobs)
 					if err != nil {
 						return err
 					}
@@ -260,7 +258,7 @@ func main() {
 					if err != nil {
 						return err
 					}
-					err = ConfirmDeleteDroplets(config, userName, instanceToJobs)
+					err = ConfirmDeleteDroplets(config, username, instanceToJobs)
 					if err != nil {
 						return err
 					}
@@ -346,54 +344,13 @@ func main() {
 					if err != nil {
 						return err
 					}
+          showAll := c.Bool("all")
 
-					existingState, err := state.GetState(config, bucketName)
+          err = PrintStatus(config, bucketName, showAll)
 					if err != nil {
 						return err
 					}
 
-					// Print the status of each job using tablewriter
-					table := tablewriter.NewWriter(os.Stdout)
-					table.SetHeader([]string{"Job ID", "Status", "Droplet ID", "Droplet IP", "Started At", "Updated At", "Completed At"})
-
-					showAll := c.Bool("all")
-					formatDate := func(timestamp int64) string {
-						if timestamp == 0 {
-							return ""
-						}
-						return time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
-					}
-
-					formatInt := func(i int64) string {
-						if i == 0 {
-							return ""
-						}
-						return strconv.Itoa(int(i))
-					}
-
-					// Find the latest completed job
-					latestCompletedJob, err := state.GetLatestCompletedJob(bucketName, existingState)
-					if err != nil {
-						return err
-					}
-
-					for _, job := range existingState.Jobs {
-						if showAll || (job.Status == state.Running || job.Status == state.Provisioning) || (latestCompletedJob != nil && job.ID == latestCompletedJob.ID) {
-							table.Append([]string{
-								strconv.Itoa(int(job.ID)),
-								string(job.Status),
-								formatInt(job.InstanceID),
-								job.InstanceIP,
-								formatDate(job.StartedAt),
-								formatDate(job.UpdatedAt),
-								formatDate(job.CompletedAt),
-							})
-						}
-					}
-
-					table.SetAlignment(tablewriter.ALIGN_LEFT)
-					table.SetRowLine(true)
-					table.Render()
 					return nil
 				},
 			},

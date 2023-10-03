@@ -223,6 +223,7 @@ func GetDropletsByName(config config.Config, dropletName string) ([]Droplet, err
 			if err != nil {
 				return droplets, fmt.Errorf("Failed to fetch droplet IP: %w", err)
 			}
+      fmt.Printf("Droplet info: %v", droplet)
 			droplets = append(droplets, Droplet{
 				Name:    droplet.Name,
 				ID:      int64(droplet.ID),
