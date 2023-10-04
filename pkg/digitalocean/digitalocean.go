@@ -14,10 +14,10 @@ import (
 )
 
 type Size struct {
-	CPUs   int64
-	Disk   int64
-	Memory int64
-  HourlyCost float64
+	CPUs       int64
+	Disk       int64
+	Memory     int64
+	HourlyCost float64
 }
 
 type Droplet struct {
@@ -199,10 +199,10 @@ func CreateDroplet(config config.Config, username string, region string, size st
 	}
 
 	droplet.Size = Size{
-		CPUs:   int64(newDroplet.Vcpus),
-		Disk:   int64(newDroplet.Disk),
-		Memory: int64(newDroplet.Memory),
-		HourlyCost:  float64(newDroplet.Size.PriceHourly),
+		CPUs:       int64(newDroplet.Vcpus),
+		Disk:       int64(newDroplet.Disk),
+		Memory:     int64(newDroplet.Memory),
+		HourlyCost: float64(newDroplet.Size.PriceHourly),
 	}
 	droplet.Created = newDroplet.Created
 	droplet.Name = newDroplet.Name
@@ -238,10 +238,10 @@ func GetDropletById(config config.Config, id int64) (Droplet, error) {
 		IP:      pubIp,
 		Created: dropletInfo.Created,
 		Size: Size{
-			CPUs:   int64(dropletInfo.Vcpus),
-			Disk:   int64(dropletInfo.Disk),
-			Memory: int64(dropletInfo.Memory),
-      HourlyCost: float64(dropletInfo.Size.PriceHourly),
+			CPUs:       int64(dropletInfo.Vcpus),
+			Disk:       int64(dropletInfo.Disk),
+			Memory:     int64(dropletInfo.Memory),
+			HourlyCost: float64(dropletInfo.Size.PriceHourly),
 		},
 	}
 	return droplet, nil
@@ -275,10 +275,10 @@ func GetDropletsByName(config config.Config, dropletName string) ([]Droplet, err
 				IP:      pubIp,
 				Created: droplet.Created,
 				Size: Size{
-					CPUs:   int64(droplet.Vcpus),
-					Disk:   int64(droplet.Disk),
-					Memory: int64(droplet.Memory),
-					HourlyCost:  float64(droplet.Size.PriceHourly),
+					CPUs:       int64(droplet.Vcpus),
+					Disk:       int64(droplet.Disk),
+					Memory:     int64(droplet.Memory),
+					HourlyCost: float64(droplet.Size.PriceHourly),
 				},
 			})
 		}
