@@ -57,7 +57,8 @@ setup = '''
 
 '''
 
-# This command is run after the setup script completes.
+# This command is run from the input directory
+# after the setup script completes.
 run = ""
 `)
 
