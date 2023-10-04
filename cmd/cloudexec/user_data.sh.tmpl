@@ -128,12 +128,12 @@ cleanup() {
 		update_state "failed"
 	fi
 
-	output_files="$(ls -A "$home/output/")"
+	output_files="$(ls -A "${home}/output/")"
 	if [[ -n ${output_files} ]]; then
 		echo "Uploading results..."
-		s3cmd put -r "$home/output/*" "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
+		s3cmd put -r "${home}"/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
 	else
-		echo "Skipping results upload, no files found in $home/ouput"
+		echo "Skipping results upload, no files found in ${home}/ouput"
 	fi
 
 	if [[ -s ${stdout_log} ]]; then
@@ -201,20 +201,20 @@ trap cleanup EXIT SIGHUP SIGINT SIGTERM
 # Job-specific setup
 
 echo "Running setup..."
-mkdir -p "$home/output"
+mkdir -p "${home}/output"
 eval "${SETUP_COMMANDS}"
 
 echo "Downloading input archive..."
-s3cmd get -r "s3://${BUCKET_NAME}/job-${JOB_ID}/input.zip" "$home/"
-if [[ ! -s "$home/input.zip" ]]; then
+s3cmd get -r "s3://${BUCKET_NAME}/job-${JOB_ID}/input.zip" "${home}/"
+if [[ ! -s "${home}/input.zip" ]]; then
 	echo "Error: Failed to download input archive"
 	exit 1
 fi
 
 echo "Unzipping input archive..."
-unzip "$home/input.zip" -d "$home/"
+unzip "${home}/input.zip" -d "${home}/"
 
-source "$home/venv/bin/activate"
+source "${home}/venv/bin/activate"
 
 # Update state to running
 update_state "running"
@@ -226,7 +226,7 @@ exit_code_flag="/tmp/cloudexec-exit-code"
 # Execute Job
 
 # Use Ctrl-C to detach from the tmux session
-echo "bind-key -n C-c detach" > "$home/.tmux.conf"
+echo "bind-key -n C-c detach" >"${home}/.tmux.conf"
 # Run the tmux command in the background
 echo "Attach to the tmux session with 'cloudexec attach'"
 tmux_session="cloudexec"
@@ -234,7 +234,8 @@ wrapped_run_command="$(
 	cat <<-EOF
 		set_exit_code() { echo \$? > ${exit_code_flag}; };
 		trap set_exit_code EXIT;
-    cd $home/${INPUT_DIRECTORY}
+		    cd ${home}/${INPUT_DIRECTORY}
+		    echo running workload from: ${home}/${INPUT_DIRECTORY}
 		( ${RUN_COMMAND} ) > >(tee -a ${stdout_log}) 2> >(tee -a ${stderr_log} >&2);
 	EOF
 )"
