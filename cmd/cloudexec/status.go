@@ -19,7 +19,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 
 	// Print the status of each job using tablewriter
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Job ID", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Monthly Cost", "Hourly Cost", "Started At", "Updated At", "Completed At", "Total Cost"})
+	table.SetHeader([]string{"Job ID", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Hourly Cost", "Started At", "Updated At", "Completed At", "Total Cost"})
 
 	formatDate := func(timestamp int64) string {
 		if timestamp == 0 {
@@ -51,7 +51,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 				}
 				return job.CompletedAt
 			}()
-			totalCost := float64(latestUpdate-job.StartedAt) / float64(3600) * job.Droplet.Cost.Hourly
+			totalCost := float64(latestUpdate-job.StartedAt) / float64(3600) * job.Droplet.Size.HourlyCost
 
 			table.Append([]string{
 				strconv.Itoa(int(job.ID)),
@@ -60,8 +60,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 				formatInt(job.Droplet.Size.Memory) + " MB",
 				formatInt(job.Droplet.Size.CPUs),
 				formatInt(job.Droplet.Size.Disk) + " GB",
-				"$" + formatFloat(job.Droplet.Cost.Monthly),
-				"$" + formatFloat(job.Droplet.Cost.Hourly),
+				"$" + formatFloat(job.Droplet.Size.HourlyCost),
 				formatDate(job.StartedAt),
 				formatDate(job.UpdatedAt),
 				formatDate(job.CompletedAt),
