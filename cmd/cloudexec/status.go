@@ -63,7 +63,6 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 				"$" + formatFloat(job.Droplet.Size.HourlyCost),
 				formatDate(job.StartedAt),
 				formatDate(job.UpdatedAt),
-				formatDate(job.CompletedAt),
 				"$" + formatFloat(totalCost),
 			})
 
