@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -19,7 +20,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 
 	// Print the status of each job using tablewriter
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Job ID", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Hourly Cost", "Started At", "Updated At", "Completed At", "Total Cost"})
+	table.SetHeader([]string{"Job ID", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Started At", "Updated At", "Time Elapsed", "Hourly Cost", "Total Cost"})
 
 	formatDate := func(timestamp int64) string {
 		if timestamp == 0 {
@@ -27,6 +28,27 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 		}
 		return time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
 	}
+
+  formatElapsedTime := func(seconds int64) string {
+    const (
+      minute = 60
+      hour   = minute * 60
+      day    = hour * 24
+      week   = day * 7
+    )
+    switch {
+    case seconds < minute * 2:
+      return fmt.Sprintf("%d seconds", seconds)
+    case seconds < hour * 2:
+      return fmt.Sprintf("%d minutes", seconds/minute)
+    case seconds < day * 2:
+      return fmt.Sprintf("%d hours", seconds/hour)
+    case seconds < week * 2:
+      return fmt.Sprintf("%d days", seconds/day)
+    default:
+      return fmt.Sprintf("%d weeks", seconds/week)
+    }
+  }
 
 	formatInt := func(i int64) string {
 		return strconv.Itoa(int(i))
@@ -51,7 +73,8 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 				}
 				return job.CompletedAt
 			}()
-			totalCost := float64(latestUpdate-job.StartedAt) / float64(3600) * job.Droplet.Size.HourlyCost
+      elapsedTime := int64(latestUpdate-job.StartedAt)
+			totalCost := float64(elapsedTime) / float64(3600) * job.Droplet.Size.HourlyCost
 
 			table.Append([]string{
 				strconv.Itoa(int(job.ID)),
@@ -60,9 +83,10 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 				formatInt(job.Droplet.Size.Memory) + " MB",
 				formatInt(job.Droplet.Size.CPUs),
 				formatInt(job.Droplet.Size.Disk) + " GB",
-				"$" + formatFloat(job.Droplet.Size.HourlyCost),
 				formatDate(job.StartedAt),
 				formatDate(job.UpdatedAt),
+        formatElapsedTime(elapsedTime),
+				"$" + formatFloat(job.Droplet.Size.HourlyCost),
 				"$" + formatFloat(totalCost),
 			})
 
