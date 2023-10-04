@@ -31,7 +31,7 @@ func main() {
 	username := user.Username
 	// TODO: sanitize username usage in bucketname
 	bucketName := fmt.Sprintf("cloudexec-%s", username)
-  dropletName := fmt.Sprintf("cloudexec-%v", username)
+	dropletName := fmt.Sprintf("cloudexec-%v", username)
 
 	// Attempt to load the configuration
 	config, configErr := LoadConfig(configFilePath)
@@ -345,9 +345,9 @@ func main() {
 					if err != nil {
 						return err
 					}
-          showAll := c.Bool("all")
+					showAll := c.Bool("all")
 
-          err = PrintStatus(config, bucketName, showAll)
+					err = PrintStatus(config, bucketName, showAll)
 					if err != nil {
 						return err
 					}

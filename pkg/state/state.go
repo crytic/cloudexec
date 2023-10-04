@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/crytic/cloudexec/pkg/config"
-	"github.com/crytic/cloudexec/pkg/s3"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 type JobStatus string
@@ -30,7 +30,7 @@ type JobInfo struct {
 	UpdatedAt   int64     `json:"updated_at"`
 	Status      JobStatus `json:"status"`
 	Delete      bool
-  Droplet     do.Droplet   `json:"droplet"`
+	Droplet     do.Droplet `json:"droplet"`
 }
 
 type State struct {

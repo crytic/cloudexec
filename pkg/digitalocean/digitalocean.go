@@ -14,14 +14,14 @@ import (
 )
 
 type Size struct {
-  CPUs    int64
-  Disk    int64
-  Memory  int64
+	CPUs   int64
+	Disk   int64
+	Memory int64
 }
 
 type Cost struct {
-  Hourly   float64
-  Monthly  float64
+	Hourly  float64
+	Monthly float64
 }
 
 type Droplet struct {
@@ -29,8 +29,8 @@ type Droplet struct {
 	ID      int64
 	IP      string
 	Created string
-  Size    Size
-  Cost    Cost
+	Size    Size
+	Cost    Cost
 }
 
 type Snapshot struct {
@@ -203,15 +203,15 @@ func CreateDroplet(config config.Config, username string, region string, size st
 		newDroplet = doDroplet
 	}
 
-  droplet.Size = Size{
-    CPUs:  int64(newDroplet.Vcpus),
-    Disk:  int64(newDroplet.Disk),
-    Memory:  int64(newDroplet.Memory),
-  }
-  droplet.Cost = Cost{
-    Hourly:  float64(newDroplet.Size.PriceHourly),
-    Monthly:  float64(newDroplet.Size.PriceMonthly),
-  }
+	droplet.Size = Size{
+		CPUs:   int64(newDroplet.Vcpus),
+		Disk:   int64(newDroplet.Disk),
+		Memory: int64(newDroplet.Memory),
+	}
+	droplet.Cost = Cost{
+		Hourly:  float64(newDroplet.Size.PriceHourly),
+		Monthly: float64(newDroplet.Size.PriceMonthly),
+	}
 	droplet.Created = newDroplet.Created
 	droplet.Name = newDroplet.Name
 	droplet.ID = int64(newDroplet.ID)
@@ -224,38 +224,38 @@ func CreateDroplet(config config.Config, username string, region string, size st
 }
 
 func GetDropletById(config config.Config, id int64) (Droplet, error) {
-  var droplet Droplet
+	var droplet Droplet
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
 	if err != nil {
 		return droplet, err
 	}
 
-  dropletInfo, _, err := doClient.Droplets.Get(context.TODO(), int(id))
-  if err != nil {
-      return droplet, fmt.Errorf("Failed to get droplet by id: %v", err)
-  }
-  pubIp, err := dropletInfo.PublicIPv4()
-  if err != nil {
-    return droplet, fmt.Errorf("Failed to fetch droplet IP: %w", err)
-  }
+	dropletInfo, _, err := doClient.Droplets.Get(context.TODO(), int(id))
+	if err != nil {
+		return droplet, fmt.Errorf("Failed to get droplet by id: %v", err)
+	}
+	pubIp, err := dropletInfo.PublicIPv4()
+	if err != nil {
+		return droplet, fmt.Errorf("Failed to fetch droplet IP: %w", err)
+	}
 
-  droplet = Droplet{
-    Name:    dropletInfo.Name,
-    ID:      int64(dropletInfo.ID),
-    IP:      pubIp,
-    Created: dropletInfo.Created,
-    Size:    Size{
-      CPUs:  int64(dropletInfo.Vcpus),
-      Disk:  int64(dropletInfo.Disk),
-      Memory:  int64(dropletInfo.Memory),
-    },
-    Cost:    Cost{
-      Hourly:  float64(dropletInfo.Size.PriceHourly),
-      Monthly:  float64(dropletInfo.Size.PriceMonthly),
-    },
-  }
-  return droplet, nil
+	droplet = Droplet{
+		Name:    dropletInfo.Name,
+		ID:      int64(dropletInfo.ID),
+		IP:      pubIp,
+		Created: dropletInfo.Created,
+		Size: Size{
+			CPUs:   int64(dropletInfo.Vcpus),
+			Disk:   int64(dropletInfo.Disk),
+			Memory: int64(dropletInfo.Memory),
+		},
+		Cost: Cost{
+			Hourly:  float64(dropletInfo.Size.PriceHourly),
+			Monthly: float64(dropletInfo.Size.PriceMonthly),
+		},
+	}
+	return droplet, nil
 }
 
 // GetDropletsByName returns a list of droplets with the given tag using a godo client
@@ -285,15 +285,15 @@ func GetDropletsByName(config config.Config, dropletName string) ([]Droplet, err
 				ID:      int64(droplet.ID),
 				IP:      pubIp,
 				Created: droplet.Created,
-        Size:    Size{
-          CPUs:  int64(droplet.Vcpus),
-          Disk:  int64(droplet.Disk),
-          Memory:  int64(droplet.Memory),
-        },
-        Cost:    Cost{
-          Hourly:  float64(droplet.Size.PriceHourly),
-          Monthly:  float64(droplet.Size.PriceMonthly),
-        },
+				Size: Size{
+					CPUs:   int64(droplet.Vcpus),
+					Disk:   int64(droplet.Disk),
+					Memory: int64(droplet.Memory),
+				},
+				Cost: Cost{
+					Hourly:  float64(droplet.Size.PriceHourly),
+					Monthly: float64(droplet.Size.PriceMonthly),
+				},
 			})
 		}
 
