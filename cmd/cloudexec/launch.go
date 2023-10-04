@@ -44,7 +44,6 @@ func InitLaunchConfig() error {
 
 	// Write the default launch config to the file
 	_, err = launchConfigFile.WriteString(`
-
 # Set the directory to upload to the droplet.
 [input]
 directory = ""
@@ -124,7 +123,7 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 	// upload local files to the bucket
 	sourcePath := lc.Input.Directory // TODO: verify that this path exists & throw informative error if not
 	destPath := fmt.Sprintf("job-%v", thisJobId)
-	fmt.Printf("Uploading contents of directory %s to bucket %s/%s...\n", sourcePath, bucketName, destPath)
+	fmt.Printf("Compressing and uploading contents of directory %s to bucket %s/%s...\n", sourcePath, bucketName, destPath)
 	err = UploadDirectoryToSpaces(config, bucketName, sourcePath, destPath)
 	if err != nil {
 		return fmt.Errorf("Failed to upload files: %w", err)
