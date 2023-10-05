@@ -13,11 +13,19 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
+type Size struct {
+	CPUs       int64
+	Disk       int64
+	Memory     int64
+	HourlyCost float64
+}
+
 type Droplet struct {
 	Name    string
 	ID      int64
 	IP      string
 	Created string
+	Size    Size
 }
 
 type Snapshot struct {
@@ -190,6 +198,12 @@ func CreateDroplet(config config.Config, username string, region string, size st
 		newDroplet = doDroplet
 	}
 
+	droplet.Size = Size{
+		CPUs:       int64(newDroplet.Vcpus),
+		Disk:       int64(newDroplet.Disk),
+		Memory:     int64(newDroplet.Memory),
+		HourlyCost: float64(newDroplet.Size.PriceHourly),
+	}
 	droplet.Created = newDroplet.Created
 	droplet.Name = newDroplet.Name
 	droplet.ID = int64(newDroplet.ID)
@@ -199,6 +213,36 @@ func CreateDroplet(config config.Config, username string, region string, size st
 	}
 
 	return droplet, nil
+}
+
+func GetDropletById(config config.Config, id int64) (Droplet, error) {
+	// create a client
+	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
+	if err != nil {
+		return Droplet{}, err
+	}
+
+	dropletInfo, _, err := doClient.Droplets.Get(context.TODO(), int(id))
+	if err != nil {
+		return Droplet{}, fmt.Errorf("Failed to get droplet by id: %v", err)
+	}
+	pubIp, err := dropletInfo.PublicIPv4()
+	if err != nil {
+		return Droplet{}, fmt.Errorf("Failed to fetch droplet IP: %w", err)
+	}
+
+	return Droplet{
+		Name:    dropletInfo.Name,
+		ID:      int64(dropletInfo.ID),
+		IP:      pubIp,
+		Created: dropletInfo.Created,
+		Size: Size{
+			CPUs:       int64(dropletInfo.Vcpus),
+			Disk:       int64(dropletInfo.Disk),
+			Memory:     int64(dropletInfo.Memory),
+			HourlyCost: float64(dropletInfo.Size.PriceHourly),
+		},
+	}, nil
 }
 
 // GetDropletsByName returns a list of droplets with the given tag using a godo client
@@ -228,6 +272,12 @@ func GetDropletsByName(config config.Config, dropletName string) ([]Droplet, err
 				ID:      int64(droplet.ID),
 				IP:      pubIp,
 				Created: droplet.Created,
+				Size: Size{
+					CPUs:       int64(droplet.Vcpus),
+					Disk:       int64(droplet.Disk),
+					Memory:     int64(droplet.Memory),
+					HourlyCost: float64(droplet.Size.PriceHourly),
+				},
 			})
 		}
 
