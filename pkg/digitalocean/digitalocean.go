@@ -216,23 +216,22 @@ func CreateDroplet(config config.Config, username string, region string, size st
 }
 
 func GetDropletById(config config.Config, id int64) (Droplet, error) {
-	var droplet Droplet
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
 	if err != nil {
-		return droplet, err
+		return Droplet{}, err
 	}
 
 	dropletInfo, _, err := doClient.Droplets.Get(context.TODO(), int(id))
 	if err != nil {
-		return droplet, fmt.Errorf("Failed to get droplet by id: %v", err)
+		return Droplet{}, fmt.Errorf("Failed to get droplet by id: %v", err)
 	}
 	pubIp, err := dropletInfo.PublicIPv4()
 	if err != nil {
-		return droplet, fmt.Errorf("Failed to fetch droplet IP: %w", err)
+		return Droplet{}, fmt.Errorf("Failed to fetch droplet IP: %w", err)
 	}
 
-	droplet = Droplet{
+  return Droplet{
 		Name:    dropletInfo.Name,
 		ID:      int64(dropletInfo.ID),
 		IP:      pubIp,
@@ -243,8 +242,7 @@ func GetDropletById(config config.Config, id int64) (Droplet, error) {
 			Memory:     int64(dropletInfo.Memory),
 			HourlyCost: float64(dropletInfo.Size.PriceHourly),
 		},
-	}
-	return droplet, nil
+	}, nil
 }
 
 // GetDropletsByName returns a list of droplets with the given tag using a godo client

@@ -131,7 +131,7 @@ cleanup() {
 		echo "Uploading results..."
 		s3cmd put -r ~/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
 	else
-		echo "Skipping results upload, no files found in ~/ouput"
+		echo "Skipping results upload, no files found in ~/output"
 	fi
 
 	if [[ -s ${stdout_log} ]]; then
