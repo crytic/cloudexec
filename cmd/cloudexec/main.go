@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	version              = "dev"
-	commit               = "none"
-	date                 = "unknown"
-	configFilePath       = fmt.Sprintf("%s/.config/cloudexec/config.toml", os.Getenv("HOME"))
-	launchConfigFilePath = "./cloudexec.toml"
+	Version              = "dev"
+	Commit               = "none"
+	Date                 = "unknown"
+	ConfigFilePath       = fmt.Sprintf("%s/.config/cloudexec/config.toml", os.Getenv("HOME"))
+	LaunchConfigFilePath = "./cloudexec.toml"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	dropletName := fmt.Sprintf("cloudexec-%v", username)
 
 	// Attempt to load the configuration
-	config, configErr := LoadConfig(configFilePath)
+	config, configErr := LoadConfig(ConfigFilePath)
 
 	app := &cli.App{
 		Name:  "cloudexec",
@@ -112,16 +112,16 @@ func main() {
 					}
 
 					// Check if a local cloudexec.toml exists
-					if _, err := os.Stat(launchConfigFilePath); os.IsNotExist(err) {
+					if _, err := os.Stat(LaunchConfigFilePath); os.IsNotExist(err) {
 						// Check if the path to a launch config is provided
 						if c.Args().Len() < 1 {
 							return fmt.Errorf("please provide a path to a cloudexec.toml file or create one in the current directory")
 						}
-						launchConfigFilePath = c.Args().Get(0)
+						LaunchConfigFilePath = c.Args().Get(0)
 					}
 
 					// Load the launch configuration
-					lc, err := LoadLaunchConfig(launchConfigFilePath)
+					lc, err := LoadLaunchConfig(LaunchConfigFilePath)
 					if err != nil {
 						return err
 					}
@@ -503,7 +503,7 @@ func main() {
 				Usage:   "Gets the version of the app",
 				Aliases: []string{"v"},
 				Action: func(*cli.Context) error {
-					fmt.Printf("cloudexec %s, commit %s, built at %s", version, commit, date)
+					fmt.Printf("cloudexec %s, commit %s, built at %s", Version, Commit, Date)
 					return nil
 				},
 			},
