@@ -18,7 +18,16 @@
 
           default = cloudexec;
 
-          cloudexec = pkgs.buildGoModule {
+          cloudexec =
+            let
+              gitInfo = pkgs.runCommand "get-git-info" {} ''
+                echo "commit=$(git rev-parse HEAD)" > $out
+                echo "date=$(git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S')" >> $out
+              '';
+              
+              gitCommit = builtins.head (builtins.match "commit=(.*)" (builtins.readFile gitInfo));
+              gitDate = builtins.head (builtins.match "date=(.*)" (builtins.readFile gitInfo));
+            in pkgs.buildGoModule {
             pname = "cloudexec";
             version = "0.0.1"; # TBD
             src = ./.;
