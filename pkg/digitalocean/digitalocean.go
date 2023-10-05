@@ -231,7 +231,7 @@ func GetDropletById(config config.Config, id int64) (Droplet, error) {
 		return Droplet{}, fmt.Errorf("Failed to fetch droplet IP: %w", err)
 	}
 
-  return Droplet{
+	return Droplet{
 		Name:    dropletInfo.Name,
 		ID:      int64(dropletInfo.ID),
 		IP:      pubIp,
