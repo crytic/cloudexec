@@ -19,6 +19,7 @@ type UserData struct {
 	SetupCommands     string
 	RunCommand        string
 	Timeout           string
+	InputDirectory    string
 }
 
 //go:embed user_data.sh.tmpl
@@ -46,6 +47,7 @@ func GenerateUserData(config config.Config, lc LaunchConfig) (string, error) {
 		SetupCommands:     strings.ReplaceAll(lc.Commands.Setup, `"`, `\"`),
 		RunCommand:        strings.ReplaceAll(lc.Commands.Run, `"`, `\"`),
 		Timeout:           timeoutStr,
+		InputDirectory:    lc.Input.Directory,
 	}
 
 	// Execute the template script with provided user data

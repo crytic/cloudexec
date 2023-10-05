@@ -49,4 +49,4 @@ if ! command -v docker >/dev/null 2>&1; then
 '''
 
 # This command is run after the setup script completes.
-run = "cd ~/input && medusa fuzz --target archive.zip"
+run = "medusa fuzz --target archive.zip"
