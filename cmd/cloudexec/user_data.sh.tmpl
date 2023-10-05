@@ -133,7 +133,7 @@ cleanup() {
 		echo "Uploading results..."
 		s3cmd put -r "${home}"/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
 	else
-		echo "Skipping results upload, no files found in ${home}/ouput"
+		echo "Skipping results upload, no files found in ${home}/output"
 	fi
 
 	if [[ -s ${stdout_log} ]]; then
@@ -256,12 +256,12 @@ while true; do
 		exit_code="$(cat "${exit_code_flag}")"
 		echo
 		echo "CloudExec process has completed with exit code ${exit_code}"
+		COMPLETED=true
 		if [[ ${exit_code} == "0" ]]; then
 			update_state "completed"
 		else
 			update_state "failed"
 		fi
-		COMPLETED=true
 		# Remove the done flag temp file
 		rm "${exit_code_flag}"
 		break

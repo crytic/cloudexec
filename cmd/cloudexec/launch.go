@@ -157,8 +157,7 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 	updatedAt := time.Now().Unix()
 	for i, job := range newState.Jobs {
 		if job.ID == thisJobId {
-			newState.Jobs[i].InstanceID = droplet.ID
-			newState.Jobs[i].InstanceIP = droplet.IP
+			newState.Jobs[i].Droplet = droplet
 			newState.Jobs[i].UpdatedAt = updatedAt
 		}
 	}

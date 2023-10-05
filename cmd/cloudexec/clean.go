@@ -9,8 +9,7 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
-func ConfirmDeleteDroplets(config config.Config, userName string, instanceToJobs map[int64][]int64) error {
-	dropletName := fmt.Sprintf("cloudexec-%v", userName)
+func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJobs map[int64][]int64) error {
 	instances, err := do.GetDropletsByName(config, dropletName)
 	if err != nil {
 		return fmt.Errorf("Failed to get droplet by name: %w", err)
