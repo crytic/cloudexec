@@ -213,6 +213,10 @@ fi
 
 echo "Unzipping input archive..."
 unzip "${home}/input.zip" -d "${home}/"
+if [[ ! -d "${home}/${INPUT_DIRECTORY}" ]]; then
+	echo "Error: Failed to unzip required ${INPUT_DIRECTORY} directory"
+	exit 1
+fi
 
 source "${home}/venv/bin/activate"
 
