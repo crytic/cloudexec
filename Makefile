@@ -1,6 +1,12 @@
+# Capture version, commit, and date
+GIT_COMMIT=$(shell git rev-list -1 HEAD)
+GIT_DATE=$(shell git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S')
+VERSION="$(shell cat VERSION | tr -d '\n\r')"
+
 build: 
+	# Build the Go app with ldflags
 	@mkdir -p dist
-	@cd cmd/cloudexec && go build -o ../../dist/cloudexec
+	cd cmd/cloudexec && go build -ldflags "-X 'main.version=$(VERSION)' -X 'main.commit=$(GIT_COMMIT)' -X 'main.date=$(GIT_DATE)'" -o ../../dist/cloudexec
 
 format:
 	trunk fmt
