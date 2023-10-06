@@ -19,29 +19,18 @@
           default = cloudexec;
 
           cloudexec = let
-            versionFileContent = builtins.readFile ./VERSION;
             version = let
-              result = builtins.match ".*version=([^\n]*).*" versionFileContent;
+              result = builtins.match "([^\n]*).*" (builtins.readFile ./VERSION);
             in if result != null then builtins.head result else "unknown";
             gitCommit = let
-              result = builtins.match ".*commit=([^\n]*).*" versionFileContent;
+              result = builtins.match ".*commit=([^\n]*).*" (builtins.readFile ./VERSION);
             in if result != null then builtins.head result else "unknown";
             gitDate = let
-              result = builtins.match ".*date=([^\n]*).*" versionFileContent;
+              result = builtins.match ".*date=([^\n]*).*" (builtins.readFile ./VERSION);
             in if result != null then builtins.head result else "unknown";
-            testString = ''
-              version=0.1.0
-              foo=bar
-            '';
-            result = builtins.match ".*version=([^\n]*).*" testString;
           in pkgs.buildGoModule {
-            mytest = builtins.trace result "test";
-            debug1 = builtins.trace "VERSION values: <${versionFileContent}>" "debug";
-            debug2 = builtins.trace "version value: <${version}>" "debug";
-            debug3 = builtins.trace "gitCommit value: <${gitCommit}>" "debug";
-            debug4 = builtins.trace "gitDate value: <${gitDate}>" "debug";
             pname = "cloudexec";
-            version = "0.0.1"; # TBD
+            version = "${version}";
             src = ./.;
             vendorSha256 = "sha256-xiiMcjo+hRllttjYXB3F2Ms2gX43r7/qgwxr4THNhsk=";
             nativeBuildInputs = [

@@ -5,10 +5,10 @@ GIT_COMMIT=$(shell git rev-list -1 HEAD)
 GIT_DATE=$(shell git log -1 --format=%cd --date=format:'%Y-%m-%d-%H:%M:%S')
 VERSION="$(shell cat VERSION | tr -d '\n\r')"
 
+# Build the Go app with ldflags
 build: 
-	# Build the Go app with ldflags
 	@mkdir -p dist
-	cd cmd/cloudexec && go build -ldflags "-X 'main.version=$(VERSION)' -X 'main.commit=$(GIT_COMMIT)' -X 'main.date=$(GIT_DATE)'" -o ../../dist/cloudexec
+	cd cmd/cloudexec && go build -ldflags "-X 'main.Version=$(VERSION)' -X 'main.Commit=$(GIT_COMMIT)' -X 'main.Date=$(GIT_DATE)'" -o ../../dist/cloudexec
 
 format:
 	trunk fmt
@@ -25,13 +25,13 @@ lint:
 	go fmt pkg/state/*.go
 	shellcheck cmd/cloudexec/user_data.sh.tmpl
 
+# smuggles git info in the VERSION file to work around nix flake hermicity
 nix-install:
-	rm -f ./.VERSION.backup
-	cp ./VERSION ./.VERSION.backup
-	echo "commit=$(GIT_COMMIT)" >> ./VERSION	
-	echo "date=$(GIT_DATE)" >> ./VERSION	
-	nix build || (cp -f ./.VERSION.backup ./VERSION && false)
-	rm -f ./VERSION
-	cp ./.VERSION.backup ./VERSION
+	@cp -f ./VERSION ./.VERSION.backup
+	@echo "commit=$(GIT_COMMIT)" >> ./VERSION	
+	@echo "date=$(GIT_DATE)" >> ./VERSION	
+	@echo "nix build"
+	@nix build || (cp -f ./.VERSION.backup ./VERSION && false)
+	@mv -f ./.VERSION.backup ./VERSION
 	nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1)
 	nix profile install ./result
