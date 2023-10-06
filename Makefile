@@ -27,16 +27,14 @@ lint:
 
 # smuggles git info in the VERSION file to work around nix flake hermicity
 nix-install:
-	@cp -f ./VERSION ./.VERSION.backup
-	@trap 'mv -f ./.VERSION.backup ./VERSION' EXIT; \
-	SUCCESS=0; \
+	@set -e; \
+	cp -f ./VERSION ./.VERSION.backup; \
+	trap 'mv -f ./.VERSION.backup ./VERSION' EXIT; \
 	echo "commit=$(GIT_COMMIT)" >> ./VERSION; \
 	echo "date=$(GIT_DATE)" >> ./VERSION; \
 	echo "nix build"; \
-	nix build && SUCCESS=1; \
-	if [ $$SUCCESS -eq 1 ]; then \
-		echo nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1); \
-		nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1); \
-		echo nix profile install ./result; \
-		nix profile install ./result; \
-	fi
+	nix build; \
+	echo nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1); \
+	nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1); \
+	echo nix profile install ./result; \
+	nix profile install ./result
