@@ -121,7 +121,7 @@ func processOpValue(value string) (string, error) {
 		cmd.Stderr = &stderr
 		output, err := cmd.Output()
 		if err != nil {
-      // err says "exit status 1" so not very helpful, omit it from the following message
+			// err says "exit status 1" so not very helpful, omit it from the following message
 			return "", fmt.Errorf("Failed to process 1password reference for %s: %s", value, stderr.String())
 		}
 		return strings.TrimSpace(string(output)), nil
