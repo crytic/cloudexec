@@ -18,13 +18,29 @@
 
           default = cloudexec;
 
-          cloudexec = pkgs.buildGoModule {
+          cloudexec = let
+            version = let
+              result = builtins.match "([^\n]*).*" (builtins.readFile ./VERSION);
+            in if result != null then builtins.head result else "unknown";
+            gitCommit = let
+              result = builtins.match ".*commit=([^\n]*).*" (builtins.readFile ./VERSION);
+            in if result != null then builtins.head result else "unknown";
+            gitDate = let
+              result = builtins.match ".*date=([^\n]*).*" (builtins.readFile ./VERSION);
+            in if result != null then builtins.head result else "unknown";
+          in pkgs.buildGoModule {
             pname = "cloudexec";
-            version = "0.0.1"; # TBD
+            version = "${version}";
             src = ./.;
             vendorSha256 = "sha256-xiiMcjo+hRllttjYXB3F2Ms2gX43r7/qgwxr4THNhsk=";
             nativeBuildInputs = [
+              pkgs.git
               pkgs.go_1_20
+            ];
+            ldflags = [
+              "-X main.Version=${version}"
+              "-X main.Commit=${gitCommit}"
+              "-X main.Date=${gitDate}"
             ];
           };
 

@@ -3,9 +3,9 @@ project_name: cloudexec
 builds:
   - ldflags:
       - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.FullCommit}}
-      - -X main.date={{.CommitDate}}
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.FullCommit}}
+      - -X main.Date={{.CommitDate}}
     env:
       - CGO_ENABLED=0
       - GOFLAGS=-mod=readonly -trimpath
