@@ -259,7 +259,7 @@ func main() {
 					if err != nil {
 						return err
 					}
-					err = ConfirmDeleteDroplets(config, username, instanceToJobs)
+					err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
