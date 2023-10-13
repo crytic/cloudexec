@@ -41,10 +41,6 @@ signs:
     artifacts: all
 
 release:
-  # TODO(@oldsj) remove this before merging to main
-  draft: true
-  replace_existing_draft: true
-
   github:
     owner: crytic
     name: cloudexec
