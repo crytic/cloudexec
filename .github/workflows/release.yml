@@ -48,6 +48,11 @@ jobs:
         run: |
           ./dist/cloudexec_linux_amd64_v1/cloudexec version
 
+      - name: Setup SSH Deploy Key
+        uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e #v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.HOMEBREW_TOOLS_DEPLOY_KEY }}
+
       - name: Publish release
         uses: goreleaser/goreleaser-action@v4
         with:
@@ -55,4 +60,3 @@ jobs:
           args: release --clean --skip-validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PRIVATE_KEY_PATH: ${{ secrets.HOMEBREW_TOOLS_DEPLOY_KEY }}

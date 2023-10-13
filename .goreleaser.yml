@@ -55,7 +55,6 @@ brews:
       name: homebrew-tools
       git:
         url: git@github.com:trailofbits/homebrew-tools.git
-        private_key: "{{ .Env.PRIVATE_KEY_PATH }}"
     homepage: https://github.com/crytic/cloudexec
     folder: Formula
     install: |-
