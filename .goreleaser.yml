@@ -43,10 +43,10 @@ signs:
     args: [sign-blob, --yes, "--bundle=${signature}", "${artifact}"]
     artifacts: all
 
-release:
-  github:
-    owner: crytic
-    name: cloudexec
+# release:
+#   github:
+#     owner: crytic
+#     name: cloudexec
 
 brews:
   - tap:
