@@ -60,3 +60,4 @@ jobs:
           args: release --clean --skip-validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE_KEY: ${{ secrets.HOMEBREW_TOOLS_DEPLOY_KEY }}
