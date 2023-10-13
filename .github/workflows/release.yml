@@ -54,4 +54,4 @@ jobs:
           version: latest
           args: release --clean --skip-validate
         env:
-          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          HOMEBREW_TOOLS_DEPLOY_KEY: ${{ secrets.HOMEBREW_TOOLS_DEPLOY_KEY }}
