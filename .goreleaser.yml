@@ -50,7 +50,7 @@ brews:
       owner: trailofbits
       name: homebrew-tools
       git:
-        private_key: '{{ .Env.HOMEBREW_TOOLS_DEPLOY_KEY }}'
+        private_key: "{{ .Env.HOMEBREW_TOOLS_DEPLOY_KEY }}"
     homepage: https://github.com/crytic/cloudexec
     folder: Formula
     install: |-
