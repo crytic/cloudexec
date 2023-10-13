@@ -40,16 +40,22 @@ signs:
     args: [sign-blob, --yes, "--bundle=${signature}", "${artifact}"]
     artifacts: all
 
-# release:
-#   github:
-#     owner: crytic
-#     name: cloudexec
+release:
+  # TODO(@oldsj) remove this before merging to main
+  draft: true
+  replace_existing_draft: true
+
+  github:
+    owner: crytic
+    name: cloudexec
 
 brews:
   - repository:
       owner: trailofbits
       name: homebrew-tools
-      token: "{{ .Env.RELEASE_TOKEN }}"
+      git:
+        url: git@github.com:trailofbits/homebrew-tools.git
+        private_key: "{{ .Env.PRIVATE_KEY_PATH }}"
     homepage: https://github.com/crytic/cloudexec
     folder: Formula
     install: |-
