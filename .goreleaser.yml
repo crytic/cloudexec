@@ -20,7 +20,6 @@ builds:
     # ensures mod timestamp to be the commit timestamp
     mod_timestamp: "{{ .CommitTimestamp }}"
 
-
 archives:
   - format: tar.gz
     # this name template makes the OS and Arch compatible with the results of uname.
