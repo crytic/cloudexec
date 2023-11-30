@@ -20,9 +20,6 @@ builds:
     # ensures mod timestamp to be the commit timestamp
     mod_timestamp: "{{ .CommitTimestamp }}"
 
-source:
-  enabled: true
-  rlcp: true
 archives:
   - format: tar.gz
     # this name template makes the OS and Arch compatible with the results of uname.
@@ -49,10 +46,12 @@ release:
     name: cloudexec
 
 brews:
-  - tap:
+  - repository:
       owner: trailofbits
       name: homebrew-tools
-      token: "{{ .Env.GITHUB_TOKEN }}"
+      git:
+        url: git@github.com:trailofbits/homebrew-tools.git
+        private_key: "{{ .Env.PRIVATE_KEY }}"
     homepage: https://github.com/crytic/cloudexec
     folder: Formula
     install: |-

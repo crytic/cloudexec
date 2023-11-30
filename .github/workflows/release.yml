@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch: {}
   push:
     tags:
       - v[0-9].[0-9]+.[0-9]+
@@ -29,6 +30,8 @@ jobs:
           version: latest
           # Skip the publishing step to test the binaries first
           args: release --skip-publish
+        env:
+          PRIVATE_KEY: ${{ secrets.HOMEBREW_TOOLS_DEPLOY_KEY }}
 
       - name: Verify signatures
         run: |
@@ -53,4 +56,5 @@ jobs:
           version: latest
           args: release --clean --skip-validate
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIVATE_KEY: ${{ secrets.HOMEBREW_TOOLS_DEPLOY_KEY }}
