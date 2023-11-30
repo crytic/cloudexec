@@ -116,7 +116,7 @@ cloudexec check
 Generate a cloudexec.toml configuration file in the current directory.
 
 ```bash
-cloudexec launch init
+cloudexec init
 ```
 
 Update the `cloudexec.toml` as needed.
