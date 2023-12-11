@@ -238,8 +238,12 @@ wrapped_run_command="$(
 	cat <<-EOF
 		set_exit_code() { echo \$? > ${exit_code_flag}; };
 		trap set_exit_code EXIT;
-		    cd ${home}/${INPUT_DIRECTORY}
-		    echo running workload from: ${home}/${INPUT_DIRECTORY}
+		cd ${home}/${INPUT_DIRECTORY}
+		echo running workload from: ${home}/${INPUT_DIRECTORY}
+		# Activates foundry, etc installations
+		if [[ -f /.bashrc ]]
+		then source /.bashrc
+		fi
 		( ${RUN_COMMAND} ) > >(tee -a ${stdout_log}) 2> >(tee -a ${stderr_log} >&2);
 	EOF
 )"

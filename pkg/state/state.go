@@ -211,7 +211,7 @@ func GetJobIdsByInstance(config config.Config, bucketName string) (map[int64][]i
 	}
 	for _, job := range existingState.Jobs {
 		if job.Droplet.ID == 0 {
-      fmt.Printf("Warning: Uninitialized droplet id for job %d\n", job.ID)
+			fmt.Printf("Warning: Uninitialized droplet id for job %d\n", job.ID)
 		}
 		instanceToJobIds[job.Droplet.ID] = append(instanceToJobIds[job.Droplet.ID], job.ID)
 	}
