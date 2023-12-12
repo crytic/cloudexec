@@ -45,7 +45,14 @@ if ! command -v docker >/dev/null 2>&1; then
   user="$(whoami)"
   usermod -aG docker "${user}"
   systemctl enable docker
-  fi
+fi
+
+if ! command -v forge >/dev/null 2>&1; then
+  echo "Installing foundry..."
+  curl -L https://foundry.paradigm.xyz | bash
+  source /.bashrc
+  foundryup
+fi
 '''
 
 # This command is run after the setup script completes.

@@ -12,11 +12,11 @@ import (
 func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJobs map[int64][]int64) error {
 	instances, err := do.GetDropletsByName(config, dropletName)
 	if err != nil {
-		return fmt.Errorf("Failed to get droplet by name: %w", err)
+		return fmt.Errorf("Failed to get droplets by name: %w", err)
 	}
 	if len(instances) > 0 {
 		// TODO: support multiple droplets
-		fmt.Println("existing instance(s) found:")
+		fmt.Printf("Existing %s instance(s) found:\n", dropletName)
 		for _, instance := range instances {
 			// get a pretty string describing the jobs associated with this instance
 			if instanceToJobs == nil {
@@ -47,7 +47,7 @@ func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJ
 			}
 		}
 	} else {
-		fmt.Println("zero instances found")
+		fmt.Printf("Zero %s instances found\n", dropletName)
 	}
 	return nil
 }
