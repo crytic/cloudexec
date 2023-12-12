@@ -17,9 +17,11 @@ export RUN_COMMAND="{{.RunCommand}}"
 export TIMEOUT="{{.Timeout}}"
 export INPUT_DIRECTORY="{{.InputDirectory}}"
 
+home="/root"
+input_dir="${home}/${INPUT_DIRECTORY}"
+output_dir="${input_dir}/output"
 stdout_log="/tmp/cloudexec-stdout.log"
 stderr_log="/tmp/cloudexec-stderr.log"
-home="/root"
 
 ########################################
 # Required setup
@@ -128,12 +130,12 @@ cleanup() {
 		update_state "failed"
 	fi
 
-	output_files="$(ls -A "${home}/output/")"
+	output_files="$(ls -A "${output_dir}/")"
 	if [[ -n ${output_files} ]]; then
 		echo "Uploading results..."
-		s3cmd put -r "${home}"/output/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
+		s3cmd put -r "${output_dir}"/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
 	else
-		echo "Skipping results upload, no files found in ${home}/output"
+		echo "Skipping results upload, no files found in ${output_dir}"
 	fi
 
 	if [[ -s ${stdout_log} ]]; then
@@ -201,7 +203,6 @@ trap cleanup EXIT SIGHUP SIGINT SIGTERM
 # Job-specific setup
 
 echo "Running setup..."
-mkdir -p "${home}/output"
 eval "${SETUP_COMMANDS}"
 
 echo "Downloading input archive..."
@@ -213,11 +214,12 @@ fi
 
 echo "Unzipping input archive..."
 unzip "${home}/input.zip" -d "${home}/"
-if [[ ! -d "${home}/${INPUT_DIRECTORY}" ]]; then
-	echo "Error: Failed to unzip required ${INPUT_DIRECTORY} directory"
+if [[ ! -d ${input_dir} ]]; then
+	echo "Error: Failed to unzip required ${input_dir} directory"
 	exit 1
 fi
 
+mkdir -p "${input_dir}/output"
 source "${home}/venv/bin/activate"
 
 # Update state to running
@@ -238,8 +240,8 @@ wrapped_run_command="$(
 	cat <<-EOF
 		set_exit_code() { echo \$? > ${exit_code_flag}; };
 		trap set_exit_code EXIT;
-		cd ${home}/${INPUT_DIRECTORY}
-		echo running workload from: ${home}/${INPUT_DIRECTORY}
+		cd ${input_dir}
+		echo running workload from: ${input_dir}
 		# Activates foundry, etc installations
 		if [[ -f /.bashrc ]]
 		then source /.bashrc
