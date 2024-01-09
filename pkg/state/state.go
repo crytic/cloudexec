@@ -54,6 +54,12 @@ func GetState(config config.Config, bucketName string) (*State, error) {
 		return nil, fmt.Errorf("Failed to unmarshal state JSON: %w", err)
 	}
 
+	for _, job := range state.Jobs {
+    if job.Name == "" {
+      job.Name = "No name"
+    }
+  }
+
 	return &state, nil
 }
 
