@@ -168,7 +168,6 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 	}
 
 	// Add the droplet to the SSH config file
-	// TODO: improve this for multi droplet support
 	fmt.Println("Deleting old cloudexec instance from SSH config file...")
 	err = ssh.DeleteSSHConfig(user, "cloudexec")
 	if err != nil {
@@ -182,7 +181,6 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 
 	// Ensure we can SSH into the droplet
 	fmt.Println("Ensuring we can SSH into the droplet...")
-	// TODO: improve this for multi droplet support
 	// sshConfigName := fmt.Sprintf("cloudexec-%v", dropletIp)
 	sshConfigName := "cloudexec"
 	sshConfigName = strings.ReplaceAll(sshConfigName, ".", "-")

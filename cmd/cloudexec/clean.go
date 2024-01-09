@@ -15,7 +15,6 @@ func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJ
 		return fmt.Errorf("Failed to get droplets by name: %w", err)
 	}
 	if len(instances) > 0 {
-		// TODO: support multiple droplets
 		fmt.Printf("Existing %s instance(s) found:\n", dropletName)
 		for _, instance := range instances {
 			// get a pretty string describing the jobs associated with this instance
