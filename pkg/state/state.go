@@ -24,6 +24,7 @@ const (
 )
 
 type JobInfo struct {
+	Name        string    `json:"job"`
 	ID          int64     `json:"id"`
 	StartedAt   int64     `json:"started_at"` // Unix timestamp
 	CompletedAt int64     `json:"completed_at"`
