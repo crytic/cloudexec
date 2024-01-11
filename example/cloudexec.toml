@@ -1,5 +1,5 @@
 [input]
-job_name = "medusa example"
+jobName = "medusa example"
 directory = "input"
 timeout = "48h"
 
