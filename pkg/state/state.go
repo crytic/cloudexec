@@ -197,6 +197,10 @@ func GetLatestCompletedJob(bucketName string, state *State) (*JobInfo, error) {
 		}
 	}
 
+  if latestCompletedJob == nil {
+    return nil, fmt.Errorf("No completed jobs available")
+  }
+
 	return latestCompletedJob, nil
 }
 
