@@ -142,7 +142,7 @@ cleanup() {
 		update_state "failed"
 	fi
 
-  upload_output
+	upload_output
 
 	if [[ -s ${stdout_log} ]]; then
 		echo
@@ -259,11 +259,13 @@ tmux new-session -d -s "${tmux_session}" "${wrapped_run_command}"
 
 start_time=$(date "+%s")
 sync_heartbeat=60
-next_sync=$(( "${start_time}" $sync_heartbeat ))
+next_sync=$(("${start_time}" + "${sync_heartbeat}"))
 pretty_start_time="$(fmtDate "${start_time}")"
 end_time=$(("${start_time}" + TIMEOUT))
 pretty_end_time="$(fmtDate "${end_time}")"
 echo "Workload is running, timer started at ${pretty_start_time}, we'll time out at ${pretty_end_time}"
+echo "================================================================================================"
+echo
 
 ########################################
 # Wait for job to finish
@@ -295,10 +297,9 @@ while true; do
 	fi
 
 	if [[ ${current_time} -gt ${next_sync} ]]; then
-		echo
-		echo "Uploading output so far"
-    upload_output
-    next_sync=$(( $next_sync + 60 ))
+		echo "Uploading output at ${current_time}"
+		upload_output
+		next_sync=$(("${next_sync}" + "${sync_heartbeat}"))
 	fi
 
 	sleep 1s

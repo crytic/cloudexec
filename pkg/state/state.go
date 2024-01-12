@@ -191,7 +191,7 @@ func GetLatestCompletedJob(bucketName string, state *State) (*JobInfo, error) {
 	// Find the latest completed job
 	for i := len(state.Jobs) - 1; i >= 0; i-- {
 		job := state.Jobs[i]
-		if job.Status == Completed {
+		if job.Status == Completed || job.Status == Failed {
 			latestCompletedJob = &job
 			break
 		}
