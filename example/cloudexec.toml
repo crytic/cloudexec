@@ -1,5 +1,6 @@
 [input]
-directory = "./input"
+jobName = "medusa example"
+directory = "input"
 timeout = "48h"
 
 [commands]

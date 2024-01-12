@@ -23,6 +23,7 @@ type Commands struct {
 type LaunchConfig struct {
 	Commands Commands `toml:"commands"`
 	Input    struct {
+		JobName   string
 		Directory string
 		Timeout   string
 	} `toml:"input"`
@@ -109,6 +110,7 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 	startedAt := time.Now().Unix()
 
 	newJob := state.JobInfo{
+		Name:      lc.Input.JobName,
 		ID:        thisJobId,
 		Status:    state.Provisioning,
 		StartedAt: startedAt,

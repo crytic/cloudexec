@@ -15,9 +15,11 @@ func getLaunchConfig(duration string) LaunchConfig {
 			Run:   "echo 'lets run'",
 		},
 		Input: struct {
+			JobName   string
 			Directory string
 			Timeout   string
 		}{
+			JobName:   "test job name",
 			Directory: "./input",
 			Timeout:   duration,
 		},
