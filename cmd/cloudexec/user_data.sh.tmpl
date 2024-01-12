@@ -121,6 +121,18 @@ s3cmd() {
 		"$@"
 }
 
+upload_output() {
+
+	output_files="$(ls -A "${output_dir}/")"
+	if [[ -n ${output_files} ]]; then
+		echo "Uploading results..."
+		s3cmd put -r "${output_dir}"/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
+	else
+		echo "Skipping results upload, no files found in ${output_dir}"
+	fi
+
+}
+
 # Define a cleanup function that will be executed on signals or exit
 export COMPLETED=false
 export TIMEDOUT=false
@@ -130,13 +142,7 @@ cleanup() {
 		update_state "failed"
 	fi
 
-	output_files="$(ls -A "${output_dir}/")"
-	if [[ -n ${output_files} ]]; then
-		echo "Uploading results..."
-		s3cmd put -r "${output_dir}"/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
-	else
-		echo "Skipping results upload, no files found in ${output_dir}"
-	fi
+  upload_output
 
 	if [[ -s ${stdout_log} ]]; then
 		echo
@@ -252,6 +258,8 @@ wrapped_run_command="$(
 tmux new-session -d -s "${tmux_session}" "${wrapped_run_command}"
 
 start_time=$(date "+%s")
+sync_heartbeat=60
+next_sync=$(( "${start_time}" $sync_heartbeat ))
 pretty_start_time="$(fmtDate "${start_time}")"
 end_time=$(("${start_time}" + TIMEOUT))
 pretty_end_time="$(fmtDate "${end_time}")"
@@ -284,6 +292,13 @@ while true; do
 		update_state "timedout"
 		TIMEDOUT=true
 		break
+	fi
+
+	if [[ ${current_time} -gt ${next_sync} ]]; then
+		echo
+		echo "Uploading output so far"
+    upload_output
+    next_sync=$(( $next_sync + 60 ))
 	fi
 
 	sleep 1s
