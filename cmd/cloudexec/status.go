@@ -20,7 +20,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 
 	// Print the status of each job using tablewriter
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Job ID", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Started At", "Updated At", "Time Elapsed", "Hourly Cost", "Total Cost"})
+	table.SetHeader([]string{"Job ID", "Job Name", "Status", "Droplet IP", "Memory", "CPUs", "Disk", "Started At", "Updated At", "Time Elapsed", "Hourly Cost", "Total Cost"})
 
 	formatDate := func(timestamp int64) string {
 		if timestamp == 0 {
@@ -78,6 +78,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 
 			table.Append([]string{
 				strconv.Itoa(int(job.ID)),
+				job.Name,
 				string(job.Status),
 				job.Droplet.IP,
 				formatInt(job.Droplet.Size.Memory) + " MB",

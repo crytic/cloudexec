@@ -24,6 +24,7 @@ const (
 )
 
 type JobInfo struct {
+	Name        string    `json:"name"`
 	ID          int64     `json:"id"`
 	StartedAt   int64     `json:"started_at"` // Unix timestamp
 	CompletedAt int64     `json:"completed_at"`
@@ -51,6 +52,13 @@ func GetState(config config.Config, bucketName string) (*State, error) {
 	err = json.Unmarshal(stateData, &state)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal state JSON: %w", err)
+	}
+
+	// Replace empty names with a placeholder
+	for i, job := range state.Jobs {
+		if job.Name == "" {
+			state.Jobs[i].Name = "no name"
+		}
 	}
 
 	return &state, nil
