@@ -78,7 +78,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 
 			table.Append([]string{
 				strconv.Itoa(int(job.ID)),
-				string(job.Name),
+				job.Name,
 				string(job.Status),
 				job.Droplet.IP,
 				formatInt(job.Droplet.Size.Memory) + " MB",
