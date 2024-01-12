@@ -1,5 +1,6 @@
 [input]
-directory = "./input"
+jobName = "medusa example"
+directory = "input"
 timeout = "48h"
 
 [commands]
@@ -56,4 +57,4 @@ fi
 '''
 
 # This command is run after the setup script completes.
-run = "bash oom-test.sh"
+run = "medusa fuzz --target archive.zip"
