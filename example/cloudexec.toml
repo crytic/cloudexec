@@ -56,4 +56,4 @@ fi
 '''
 
 # This command is run after the setup script completes.
-run = "medusa fuzz --target archive.zip"
+run = "bash oom-test.sh"
