@@ -1,6 +1,66 @@
 # CloudExec
 
-CloudExec is a command-line tool for easily running cloud-based jobs on DigitalOcean. Start, manage and pull the results of jobs from your terminal.
+CloudExec is a management tool for running computation jobs on DigitalOcean via the command line. It is general purpose; Cloudexec can set up the server with arbitrary dependencies and then run an arbitrary workload process, but it is designed to run a single long-running code analysis job such as a fuzz testing or mutation testing campaign. Output data and runtime logs are uploaded to DigitalOcean's S3-style object storage for later analysis and, when the job is complete, the server is automatically destroyed. The client-side management engine of CloudExec is written in Golang and the server itself is managed by a Bash script.
+
+Features:
+
+- 1Password CLI support for secure DigitalOcean API key management. CloudExec will help you configure these credentials and verify that they are valid.
+- Launch config file allows specification of:
+  - An input folder which is uploaded to the runtime server and also to DigitalOcean's S3-style object storage for later reference. This folder is zipped for speedy uploads.
+  - A job name, providing human-readable tags for each job.
+  - A timeout, after which the workload process will be terminated if it hasn't finished already, output will be uploaded to persistent storage, and the server will be destroyed so you will stop being charged for it.
+  - A setup command which uses bash to install dependencies and prepare the server to run the workload process.
+  - A run command which will kick off the workload process
+- An `init` subcommand for creating a new, default launch config file
+- Output is periodically uploaded to DigitalOcean's S3-style object storage so you can pull results incrementally from a running job
+- Jobs can be cancelled early if the workload process hasn't completed or the timeout hasn't been reached yet
+- Monitoring the runtime logs of a specific job or the status of all jobs
+- Automatic `ssh_config` additions allowing you to access a running server by executing `ssh cloudexec`
+- Tracks the cumulative costs incurred for running processes and the total cost of completed processes
+
+Run `cloudexec help` to list available subcommands or `cloudexec <subcommand> --help` for information regarding a specific subcommand:
+
+```text
+$ cloudexec help
+NAME:
+   cloudexec - easily run cloud based jobs
+
+USAGE:
+   cloudexec [global options] command [command options] [arguments...]
+
+COMMANDS:
+   check, c    Verifies cloud authentication
+   configure   Configure credentials
+   init        Create a new cloudexec.toml launch configuration in the current directory
+   launch, l   Launch a droplet and start a job
+   logs        Stream logs from a running job
+   cancel      Cancels any running cloudexec jobs
+   clean       Cleans up any running cloudexec droplets and clears the spaces bucket
+   pull        Pulls down the results of the latest successful job
+   status, s   Get status of running jobs
+   state       Manage state file
+   attach, a   Attach to a running job
+   version, v  Gets the version of the app
+   help, h     Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h  show help
+```
+
+Example job status output:
+
+```text
+$ cloudexec status --all
++--------+----------------+-----------+----------------+---------+------+-------+---------------------+---------------------+--------------+-------------+------------+
+| JOB ID |    JOB NAME    |  STATUS   |   DROPLET IP   | MEMORY  | CPUS | DISK  |     STARTED AT      |     UPDATED AT      | TIME ELAPSED | HOURLY COST | TOTAL COST |
++--------+----------------+-----------+----------------+---------+------+-------+---------------------+---------------------+--------------+-------------+------------+
+| 1      | medusa fuzz    | completed | 12.34.56.78    | 4096 MB | 4    | 50 GB | 2024-01-01 13:55:53 | 2024-01-02 14:05:29 | 2 days       | $0.125      | $6.0100    |
++--------+----------------+-----------+----------------+---------+------+-------+---------------------+---------------------+--------------+-------------+------------+
+| 2      | experiment     | failed    | 12.34.56.79    | 2048 MB | 2    | 25 GB | 2024-01-01 14:04:50 | 2024-01-01 14:08:03 | 3 minutes    | $0.0625     | $0.0034    |
++--------+----------------+-----------+----------------+---------+------+-------+---------------------+---------------------+--------------+-------------+------------+
+| 3      | slither-mutate | running   | 12.34.56.80    | 2048 MB | 2    | 25 GB | 2024-01-02 10:04:50 | 2024-01-02 12:08:03 | 2 hours      | $0.0625     | $0.125     |
++--------+----------------+-----------+----------------+---------+------+-------+---------------------+---------------------+--------------+-------------+------------+
+```
 
 ## Getting Started
 
