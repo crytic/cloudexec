@@ -20,7 +20,7 @@ Features:
 
 Run `cloudexec help` to list available subcommands or `cloudexec <subcommand> --help` for information regarding a specific subcommand:
 
-```bash
+```text
 $ cloudexec help
 NAME:
    cloudexec - easily run cloud based jobs
@@ -49,7 +49,7 @@ GLOBAL OPTIONS:
 
 Example job status output:
 
-```bash
+```text
 $ cloudexec status --all
 +--------+----------------+-----------+----------------+---------+------+-------+---------------------+---------------------+--------------+-------------+------------+
 | JOB ID |    JOB NAME    |  STATUS   |   DROPLET IP   | MEMORY  | CPUS | DISK  |     STARTED AT      |     UPDATED AT      | TIME ELAPSED | HOURLY COST | TOTAL COST |
