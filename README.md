@@ -146,7 +146,7 @@ Note what your [1Password secret references](https://developer.1password.com/doc
 
 These references generally follow the format: `op://<vault-name>/<item-name>/<field-name>`. For example, if you saved your keys to a vault called `Private`, in an item called `DigitalOcean` and the api key field is called `ApiKey`, then the secret reference to use is `op://Private/DigitalOcean/ApiKey`.
 
-#### Configure CloudExec
+#### Configure CloudExec credentials
 
 ```bash
 cloudexec configure
@@ -161,30 +161,43 @@ DIGITALOCEAN_SPACES_SECRET_ACCESS_KEY
 DIGITALOCEAN_SPACES_REGION
 ```
 
-Remember, if you save secret values to a `.env` file, never commit it to any version control system. Add such `.env` files to your project's `.gitignore` file to help prevent making such mistakes.
+Remember, if you save secret values to a `.env` file, never commit it to any version control system. Add such `.env` files to your project's `.gitignore` file to help prevent mistakes.
 
-### Check CloudExec access
-
-Confirm `cloudexec` has access to DigitalOcean.
+Confirm `cloudexec` is authorized to access to DigitalOcean.
 
 ```bash
 cloudexec check
 ```
 
-### Launch a new remote job
+### Configure the new job
 
-Generate a cloudexec.toml configuration file in the current directory.
+Generate a `cloudexec.toml` configuration file in the current directory.
 
 ```bash
 cloudexec init
 ```
 
-Update the `cloudexec.toml` as needed.
+Update this `cloudexec.toml` file as needed. The following fields are available:
+
+`[input]`:
+
+- `jobName`: an arbitrary, human-readable label that can help identify this job
+- `directory`: the path to the input directory which will be uploaded to the cloud runner and from which the run command will be executed
+- `timeout`: a string specifying a maximum duration for which the job can run. After this timeout is reached, results will be uploaded to s3-style storage and the server will be destroyed. For example, "6h" for six hours or "3d" for three days.
+
+`[commands]`:
+
+- `setup`: A bash string that can be used to instal arbitrary software prior to the start of the job. These setup commands are run at the beginning of each job and time elapsed does not count towards the timeout.
+- `run`: A bash string that executes the workload command
+
+### Launch a new remote job
+
+Run `cloudexec launch` from the directory containing the launch config.
 
 ```bash
 # default nyc3 region and c-2 size droplet, using a cloudexec.toml file in the current directory
 cloudexec launch
-# custom region and droplet size
+# Or, specify a custom region and droplet size
 cloudexec launch --size c-4 --region sfo2
 ```
 
@@ -226,6 +239,8 @@ cloudexec status
 cloudexec status --all
 ```
 
+The DigitalOcean dashboard will also provide helpful info including the droplet status, cpu and memory usage, and more; look for a droplet with a name that starts with `cloudexec-`.
+
 ### Sync files from a completed job to a local path
 
 ```bash
@@ -248,7 +263,7 @@ cloudexec cancel
 cloudexec clean
 ```
 
-Note that there is often a delay while deleting files from Digital Ocean Spaces buckets.
+Note that there is a delay of up to 2 weeks while deleting files from Digital Ocean Spaces buckets. Files cannot be accessed or overwritten while such delays are pending, so plan ahead. This delay is enforced by Digital Ocean, cloudexec is not able to influence it.
 
 ## Optional: Create a CloudExec DigitalOcean image
 
