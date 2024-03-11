@@ -9,17 +9,18 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
-func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJobs map[int64][]int64) error {
+func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJobs map[int64][]int64) ([]int64, error) {
+	confirmedToDelete := make([]int64)
 	instances, err := do.GetDropletsByName(config, dropletName)
 	if err != nil {
-		return fmt.Errorf("Failed to get droplets by name: %w", err)
+		return confirmedToDelete, fmt.Errorf("Failed to get droplets by name: %w", err)
 	}
 	if len(instances) > 0 {
 		fmt.Printf("Existing %s instance(s) found:\n", dropletName)
 		for _, instance := range instances {
 			// get a pretty string describing the jobs associated with this instance
 			if instanceToJobs == nil {
-				return fmt.Errorf("Given instanceToJobs argument must not be nil")
+				return confirmedToDelete, fmt.Errorf("Given instanceToJobs argument must not be nil")
 			}
 			jobs := instanceToJobs[int64(instance.ID)]
 			var prettyJobs string
@@ -41,14 +42,15 @@ func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJ
 				fmt.Printf("Destroying droplet %v...\n", instance.ID)
 				err = do.DeleteDroplet(config, instance.ID)
 				if err != nil {
-					return fmt.Errorf("Failed to destroy droplet: %w", err)
+					return confirmedToDelete, fmt.Errorf("Failed to destroy droplet: %w", err)
 				}
+        confirmedToDelete.push(instance.ID)
 			}
 		}
 	} else {
 		fmt.Printf("Zero %s instances found\n", dropletName)
 	}
-	return nil
+	return confirmedToDelete, nil
 }
 
 func ResetBucket(config config.Config, bucketName string, spacesAccessKey string, spacesSecretKey string, spacesRegion string) error {

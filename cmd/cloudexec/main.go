@@ -210,10 +210,13 @@ func main() {
 						return err
 					}
 
-					err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+					confirmedToDelete, err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
+          if (confirmedToDelete.length == 0) {
+            return nil
+          }
 					err = ssh.DeleteSSHConfig(user, "cloudexec")
 					if err != nil {
 						return err
@@ -259,14 +262,16 @@ func main() {
 					if err != nil {
 						return err
 					}
-					err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+					confirmedToDelete, err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
-					err = ssh.DeleteSSHConfig(user, "cloudexec")
-					if err != nil {
-						return err
-					}
+          if (confirmedToDelete.length > 0) {
+            err = ssh.DeleteSSHConfig(user, "cloudexec")
+            if err != nil {
+              return err
+            }
+          }
 					return nil
 				},
 			},
@@ -480,6 +485,7 @@ func main() {
 					if err != nil {
 						return err
 					}
+          // If we got a job Id, get that job's state, else continue
 					latestJob := existingState.GetLatestJob()
 					jobStatus := latestJob.Status
 
