@@ -210,17 +210,14 @@ func main() {
 						return err
 					}
 
-					confirmedToDelete, err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+          // deletes droplets per user feedback & returns a list of job IDs for state updates
+          confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
-          if (confirmedToDelete.length == 0) {
+          if (len(confirmedToDelete) == 0) {
             return nil
           }
-					err = ssh.DeleteSSHConfig(user, "cloudexec")
-					if err != nil {
-						return err
-					}
 
 					existingState, err := state.GetState(config, bucketName)
 					if err != nil {
@@ -228,7 +225,12 @@ func main() {
 					}
 
 					// mark any running jobs as cancelled
-					err = existingState.CancelRunningJobs(config, bucketName)
+					err = existingState.CancelRunningJobs(config, bucketName, confirmedToDelete)
+					if err != nil {
+						return err
+					}
+
+					err = ssh.DeleteSSHConfig(user, "cloudexec")
 					if err != nil {
 						return err
 					}
@@ -262,11 +264,11 @@ func main() {
 					if err != nil {
 						return err
 					}
-					confirmedToDelete, err = ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+          confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
-          if (confirmedToDelete.length > 0) {
+          if (len(confirmedToDelete) > 0) {
             err = ssh.DeleteSSHConfig(user, "cloudexec")
             if err != nil {
               return err

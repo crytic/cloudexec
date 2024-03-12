@@ -10,7 +10,7 @@ import (
 )
 
 func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJobs map[int64][]int64) ([]int64, error) {
-	confirmedToDelete := make([]int64)
+	var confirmedToDelete []int64
 	instances, err := do.GetDropletsByName(config, dropletName)
 	if err != nil {
 		return confirmedToDelete, fmt.Errorf("Failed to get droplets by name: %w", err)
@@ -44,7 +44,7 @@ func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJ
 				if err != nil {
 					return confirmedToDelete, fmt.Errorf("Failed to destroy droplet: %w", err)
 				}
-        confirmedToDelete.push(instance.ID)
+        confirmedToDelete = append(confirmedToDelete, instance.ID)
 			}
 		}
 	} else {
