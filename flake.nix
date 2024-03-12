@@ -32,7 +32,7 @@
             pname = "cloudexec";
             version = "${version}";
             src = ./.;
-            vendorSha256 = "sha256-xiiMcjo+hRllttjYXB3F2Ms2gX43r7/qgwxr4THNhsk=";
+            vendorHash = "sha256-xiiMcjo+hRllttjYXB3F2Ms2gX43r7/qgwxr4THNhsk=";
             nativeBuildInputs = [
               pkgs.git
               pkgs.go_1_20

@@ -24,17 +24,3 @@ lint:
 	go fmt pkg/ssh/*.go
 	go fmt pkg/state/*.go
 	shellcheck cmd/cloudexec/user_data.sh.tmpl
-
-# smuggles git info in the VERSION file to work around nix flake hermicity
-nix-install:
-	@set -e; \
-	cp -f ./VERSION ./.VERSION.backup; \
-	trap 'mv -f ./.VERSION.backup ./VERSION' EXIT; \
-	echo "commit=$(GIT_COMMIT)" >> ./VERSION; \
-	echo "date=$(GIT_DATE)" >> ./VERSION; \
-	echo "nix build"; \
-	nix build; \
-	echo nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1); \
-	nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1); \
-	echo nix profile install ./result; \
-	nix profile install ./result
