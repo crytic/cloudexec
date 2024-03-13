@@ -318,22 +318,18 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					// Abort on configuration error
 					if configErr != nil {
-						return configErr
+						return configErr // Abort on configuration error
 					}
 					slug := fmt.Sprintf("cloudexec-%s", config.Username)
-					// Initialize the s3 state
-					err := Init(config, slug)
+					err := Init(config, slug) // Initialize the s3 state
 					if err != nil {
 						return err
 					}
-
 					existingState, err := state.GetState(config, slug)
 					if err != nil {
 						return err
 					}
-
 					jobID := c.Int64("job")
 					var targetJob *state.Job
 					if jobID == 0 {
@@ -341,7 +337,6 @@ func main() {
 					} else {
 						targetJob = existingState.GetJob(jobID)
 					}
-
 					err = CancelJob(targetJob, existingState, config)
 					if err != nil {
 						return err
@@ -354,34 +349,26 @@ func main() {
 				Name:  "clean",
 				Usage: "Cleans up any running cloudexec droplets and clears the spaces bucket",
 				Action: func(*cli.Context) error {
-					// Abort on configuration error
 					if configErr != nil {
-						return configErr
+						return configErr // Abort on configuration error
 					}
 					slug := fmt.Sprintf("cloudexec-%s", config.Username)
-					// Initialize the s3 state
-					err := Init(config, slug)
+					err := Init(config, slug) // Initialize the s3 state
 					if err != nil {
 						return err
 					}
-					instanceToJobs, err := state.GetJobIdsByInstance(config, slug)
+					existingState, err := state.GetState(config, slug)
+					if err != nil {
+						return err
+					}
+					err = ConfirmCancelAll(config, existingState)
 					if err != nil {
 						return err
 					}
 					// clean existing files from the bucket
-					err = ResetBucket(config, slug, config.DigitalOcean.SpacesAccessKey, config.DigitalOcean.SpacesSecretKey, config.DigitalOcean.SpacesRegion)
+					err = ResetBucket(config, slug)
 					if err != nil {
 						return err
-					}
-					confirmedToDelete, err := ConfirmDeleteDroplets(config, slug, instanceToJobs)
-					if err != nil {
-						return err
-					}
-					if len(confirmedToDelete) > 0 {
-						err = ssh.DeleteSSHConfig(0)
-						if err != nil {
-							return err
-						}
 					}
 					return nil
 				},

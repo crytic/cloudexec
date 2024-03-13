@@ -7,53 +7,30 @@ import (
 	"github.com/crytic/cloudexec/pkg/config"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
 	"github.com/crytic/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/state"
 )
 
-func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJobs map[int64][]int64) ([]int64, error) {
-	var confirmedToDelete []int64
-	instances, err := do.GetDropletsByName(config, dropletName)
+func ConfirmCancelAll(config config.Config, existingState *state.State) error {
+	slug := fmt.Sprintf("cloudexec-%s", config.Username)
+	droplets, err := do.GetDropletsByName(config, slug)
 	if err != nil {
-		return confirmedToDelete, fmt.Errorf("Failed to get droplets by name: %w", err)
+		return fmt.Errorf("Failed to get droplets by name: %w", err)
 	}
-	if instanceToJobs == nil {
-		return confirmedToDelete, fmt.Errorf("Given instanceToJobs argument must not be nil")
+	if len(droplets) == 0 {
+		fmt.Printf("Zero %s droplets found\n", slug)
+		return nil
 	}
-	if len(instances) > 0 {
-		fmt.Printf("Existing %s instance(s) found:\n", dropletName)
-		for _, instance := range instances {
-			// get a pretty string describing the jobs associated with this instance
-			jobs := instanceToJobs[int64(instance.ID)]
-			var prettyJobs string
-			if len(jobs) == 0 {
-				prettyJobs = "none"
-			} else {
-				jobStrings := make([]string, len(jobs))
-				for i, job := range jobs {
-					jobStrings[i] = fmt.Sprint(job)
-				}
-				prettyJobs = strings.Join(jobStrings, ", ")
-			}
-
-			fmt.Printf("  - %v (IP: %v) (Jobs: %s) created at %v\n", instance.Name, instance.IP, prettyJobs, instance.Created)
-			fmt.Println("destroy this droplet? (y/n)")
-			var response string
-			fmt.Scanln(&response)
-			if strings.ToLower(response) == "y" {
-				fmt.Printf("Destroying droplet %v...\n", instance.ID)
-				err = do.DeleteDroplet(config, instance.ID)
-				if err != nil {
-					return confirmedToDelete, fmt.Errorf("Failed to destroy droplet: %w", err)
-				}
-				confirmedToDelete = append(confirmedToDelete, instance.ID)
-			}
+	fmt.Printf("Existing %s droplet(s) found:\n", slug)
+	for _, job := range existingState.Jobs {
+		err = CancelJob(&job, existingState, config)
+		if err != nil {
+			fmt.Printf("Failed to cancel job %v", job.ID)
 		}
-	} else {
-		fmt.Printf("Zero %s instances found\n", dropletName)
 	}
-	return confirmedToDelete, nil
+	return nil
 }
 
-func ResetBucket(config config.Config, bucketName string, spacesAccessKey string, spacesSecretKey string, spacesRegion string) error {
+func ResetBucket(config config.Config, bucketName string) error {
 	objects, err := s3.ListObjects(config, bucketName, "")
 	if err != nil {
 		return fmt.Errorf("Failed to list objects in bucket '%s': %w", bucketName, err)
