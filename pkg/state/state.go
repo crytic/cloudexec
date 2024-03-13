@@ -178,11 +178,20 @@ func (s *State) DeleteJob(jobID int64) {
 	}
 }
 
-func (s *State) CancelRunningJobs(config config.Config, bucketName string) error {
+func (s *State) CancelRunningJobs(config config.Config, bucketName string, toCancelSlice []int64) error {
+	// Gather list of ids to mark as cancelled
+	toCancel := make(map[int64]bool)
+	for _, id := range toCancelSlice {
+		toCancel[id] = true
+	}
+
 	// Mark any running jobs as cancelled
 	for i, job := range s.Jobs {
 		if job.Status == Running || job.Status == Provisioning {
-			s.Jobs[i].Status = Cancelled
+			if _, exists := toCancel[job.ID]; exists {
+				fmt.Printf("Setting status of job %d to 'Cancelled'\n", job.ID)
+				s.Jobs[i].Status = Cancelled
+			}
 		}
 	}
 
