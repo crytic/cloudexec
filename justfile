@@ -14,7 +14,10 @@ build:
 
 install:
 	nix build
-	echo nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1)
-	nix profile remove $(shell nix profile list | grep cloudexec | cut -d " " -f 1)
+	echo nix profile remove $(nix profile list | grep cloudexec | cut -d " " -f 1)
+	nix profile remove $(nix profile list | grep cloudexec | cut -d " " -f 1)
 	echo nix profile install ./result
 	nix profile install ./result
+
+launch-example:
+  cd example && cloudexec launch
