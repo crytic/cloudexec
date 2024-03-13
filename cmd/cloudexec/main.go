@@ -334,18 +334,21 @@ func main() {
 						return err
 					}
 
-          jobID := c.Int64("job")
-          var targetJob *state.Job
-          if jobID == 0 {
-            targetJob = existingState.GetLatestJob()
-          } else {
-            targetJob = existingState.GetJob(jobID)
-          }
+					jobID := c.Int64("job")
+					var targetJob *state.Job
+					if jobID == 0 {
+						targetJob = existingState.GetLatestJob()
+					} else {
+						targetJob = existingState.GetJob(jobID)
+					}
 
-          CancelJob(targetJob)
-          return nil
-        },
-      },
+					err = CancelJob(targetJob, existingState, config)
+					if err != nil {
+						return err
+					}
+					return nil
+				},
+			},
 
 			{
 				Name:  "clean",
