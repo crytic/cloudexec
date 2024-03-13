@@ -15,13 +15,13 @@ func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJ
 	if err != nil {
 		return confirmedToDelete, fmt.Errorf("Failed to get droplets by name: %w", err)
 	}
+	if instanceToJobs == nil {
+		return confirmedToDelete, fmt.Errorf("Given instanceToJobs argument must not be nil")
+	}
 	if len(instances) > 0 {
 		fmt.Printf("Existing %s instance(s) found:\n", dropletName)
 		for _, instance := range instances {
 			// get a pretty string describing the jobs associated with this instance
-			if instanceToJobs == nil {
-				return confirmedToDelete, fmt.Errorf("Given instanceToJobs argument must not be nil")
-			}
 			jobs := instanceToJobs[int64(instance.ID)]
 			var prettyJobs string
 			if len(jobs) == 0 {
