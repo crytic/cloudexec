@@ -41,7 +41,7 @@ func Configure() error {
 	}
 
 	configValues := config.Config{
-    Username: username,
+		Username: username,
 		DigitalOcean: struct {
 			ApiKey          string `toml:"apiKey"`
 			SpacesAccessKey string `toml:"spacesAccessKey"`
