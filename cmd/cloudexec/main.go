@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"strconv"
 
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
@@ -23,16 +22,6 @@ var (
 )
 
 func main() {
-	user, err := user.Current()
-	if err != nil {
-		fmt.Printf("Failed to get current user: %v", err)
-		os.Exit(1)
-	}
-	username := user.Username
-	// TODO: sanitize username usage in bucketname
-	bucketName := fmt.Sprintf("cloudexec-%s", username)
-	dropletName := fmt.Sprintf("cloudexec-%v", username)
-
 	// Attempt to load the configuration
 	config, configErr := LoadConfig(ConfigFilePath)
 
@@ -123,6 +112,7 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
 					// Check if a local cloudexec.toml exists
 					if _, err := os.Stat(LaunchConfigFilePath); os.IsNotExist(err) {
 						// Check if the path to a launch config is provided
@@ -140,12 +130,12 @@ func main() {
 					dropletSize := c.String("size")
 					dropletRegion := c.String("region")
 					// Initialize the s3 state
-					err = Init(config, bucketName)
+					err = Init(config, slug)
 					if err != nil {
 						return err
 					}
 					fmt.Printf("Launching a %s droplet in the %s region\n", dropletSize, dropletRegion)
-					err = Launch(user, config, dropletSize, dropletRegion, lc)
+					err = Launch(config, dropletSize, dropletRegion, lc)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -169,13 +159,14 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
 					// Initialize the s3 state
-					err = Init(config, bucketName)
+					err := Init(config, slug)
 					if err != nil {
 						return err
 					}
 					showAll := c.Bool("all")
-					err = PrintStatus(config, bucketName, showAll)
+					err = PrintStatus(config, slug, showAll)
 					if err != nil {
 						return err
 					}
@@ -198,32 +189,33 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
 					// Check if the path is provided
 					if c.Args().Len() < 1 {
 						return fmt.Errorf("please provide a path to download job outputs to")
 					}
 					path := c.Args().Get(0)
 					// Initialize the s3 state
-					err = Init(config, bucketName)
+					err := Init(config, slug)
 					if err != nil {
 						return err
 					}
-					existingState, err := state.GetState(config, bucketName)
+					existingState, err := state.GetState(config, slug)
 					if err != nil {
 						return err
 					}
 					if c.Int("job") != 0 {
-						err = DownloadJobOutput(config, c.Int("job"), path, bucketName)
+						err = DownloadJobOutput(config, c.Int("job"), path, slug)
 						if err != nil {
 							return err
 						}
 						return nil
 					} else {
-						latestCompletedJob, err := state.GetLatestCompletedJob(bucketName, existingState)
+						latestCompletedJob, err := state.GetLatestCompletedJob(slug, existingState)
 						if err != nil {
 							return err
 						}
-						err = DownloadJobOutput(config, int(latestCompletedJob.ID), path, bucketName)
+						err = DownloadJobOutput(config, int(latestCompletedJob.ID), path, slug)
 						if err != nil {
 							return err
 						}
@@ -247,12 +239,13 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
 					// Initialize the s3 state
-					err = Init(config, bucketName)
+					err := Init(config, slug)
 					if err != nil {
 						return err
 					}
-					existingState, err := state.GetState(config, bucketName)
+					existingState, err := state.GetState(config, slug)
 					if err != nil {
 						return err
 					}
@@ -268,10 +261,10 @@ func main() {
 						return nil
 					} else if c.Int("job") != 0 {
 						jobID := c.Int("job")
-						err := GetLogsFromBucket(config, jobID, bucketName)
+						err := GetLogsFromBucket(config, jobID, slug)
 						return err
 					} else {
-						err := GetLogsFromBucket(config, jobID, bucketName)
+						err := GetLogsFromBucket(config, jobID, slug)
 						return err
 					}
 				},
@@ -286,13 +279,14 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
 					// Initialize the s3 state
-					err = Init(config, bucketName)
+					err := Init(config, slug)
 					if err != nil {
 						return err
 					}
 					// First check if there's a running job
-					existingState, err := state.GetState(config, bucketName)
+					existingState, err := state.GetState(config, slug)
 					if err != nil {
 						return err
 					}
@@ -321,26 +315,27 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
 					// Initialize the s3 state
-					err = Init(config, bucketName)
+					err := Init(config, slug)
 					if err != nil {
 						return err
 					}
-					instanceToJobs, err := state.GetJobIdsByInstance(config, bucketName)
+					instanceToJobs, err := state.GetJobIdsByInstance(config, slug)
 					if err != nil {
 						return err
 					}
 					// clean existing files from the bucket
-					err = ResetBucket(config, bucketName, config.DigitalOcean.SpacesAccessKey, config.DigitalOcean.SpacesSecretKey, config.DigitalOcean.SpacesRegion)
+					err = ResetBucket(config, slug, config.DigitalOcean.SpacesAccessKey, config.DigitalOcean.SpacesSecretKey, config.DigitalOcean.SpacesRegion)
 					if err != nil {
 						return err
 					}
-					confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+					confirmedToDelete, err := ConfirmDeleteDroplets(config, slug, instanceToJobs)
 					if err != nil {
 						return err
 					}
 					if len(confirmedToDelete) > 0 {
-						err = ssh.DeleteSSHConfig(user, "cloudexec")
+						err = ssh.DeleteSSHConfig("cloudexec")
 						if err != nil {
 							return err
 						}
@@ -357,33 +352,34 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
 					// Initialize the s3 state
-					err = Init(config, bucketName)
+					err := Init(config, slug)
 					if err != nil {
 						return err
 					}
-					instanceToJobs, err := state.GetJobIdsByInstance(config, bucketName)
+					instanceToJobs, err := state.GetJobIdsByInstance(config, slug)
 					if err != nil {
 						return err
 					}
-					// deletes droplets per user feedback & returns a list of job IDs for state updates
-					confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+					// deletes droplets per feedback & returns a list of job IDs for state updates
+					confirmedToDelete, err := ConfirmDeleteDroplets(config, slug, instanceToJobs)
 					if err != nil {
 						return err
 					}
 					if len(confirmedToDelete) == 0 {
 						return nil
 					}
-					existingState, err := state.GetState(config, bucketName)
+					existingState, err := state.GetState(config, slug)
 					if err != nil {
 						return err
 					}
 					// mark any running jobs as cancelled
-					err = existingState.CancelRunningJobs(config, bucketName, confirmedToDelete)
+					err = existingState.CancelRunningJobs(config, slug, confirmedToDelete)
 					if err != nil {
 						return err
 					}
-					err = ssh.DeleteSSHConfig(user, "cloudexec")
+					err = ssh.DeleteSSHConfig("cloudexec")
 					if err != nil {
 						return err
 					}
@@ -405,13 +401,14 @@ func main() {
 							if configErr != nil {
 								return configErr
 							}
+							slug := fmt.Sprintf("cloudexec-%s", config.Username)
 							// Initialize the s3 state
-							err = Init(config, bucketName)
+							err := Init(config, slug)
 							if err != nil {
 								return err
 							}
 							// Retrieve existing state
-							existingState, err := state.GetState(config, bucketName)
+							existingState, err := state.GetState(config, slug)
 							if err != nil {
 								return err
 							}
@@ -431,8 +428,9 @@ func main() {
 							if configErr != nil {
 								return configErr
 							}
+							slug := fmt.Sprintf("cloudexec-%s", config.Username)
 							// Initialize the s3 state
-							err = Init(config, bucketName)
+							err := Init(config, slug)
 							if err != nil {
 								return err
 							}
@@ -453,7 +451,7 @@ func main() {
 								Delete: true,
 							}
 							newState.CreateJob(deleteJob)
-							err = state.UpdateState(config, bucketName, newState)
+							err = state.UpdateState(config, slug, newState)
 							if err != nil {
 								return err
 							}
@@ -469,13 +467,14 @@ func main() {
 							if configErr != nil {
 								return configErr
 							}
+							slug := fmt.Sprintf("cloudexec-%s", config.Username)
 							// Initialize the s3 state
-							err = Init(config, bucketName)
+							err := Init(config, slug)
 							if err != nil {
 								return err
 							}
 							// Retrieve existing state
-							existingState, err := state.GetState(config, bucketName)
+							existingState, err := state.GetState(config, slug)
 							if err != nil {
 								return err
 							}

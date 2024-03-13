@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -85,8 +83,8 @@ func LoadLaunchConfig(launchConfigPath string) (LaunchConfig, error) {
 	return lc, nil
 }
 
-func Launch(user *user.User, config config.Config, dropletSize string, dropletRegion string, lc LaunchConfig) error {
-	username := user.Username
+func Launch(config config.Config, dropletSize string, dropletRegion string, lc LaunchConfig) error {
+	username := config.Username
 	bucketName := fmt.Sprintf("cloudexec-%s", username)
 
 	// get existing state from bucket
@@ -134,7 +132,7 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 
 	// Get or create an SSH key
 	fmt.Println("Getting or creating SSH key pair...")
-	publicKey, err := ssh.GetOrCreateSSHKeyPair(user)
+	publicKey, err := ssh.GetOrCreateSSHKeyPair()
 	if err != nil {
 		return fmt.Errorf("Failed to get or creating SSH key pair: %w", err)
 	}
@@ -171,23 +169,19 @@ func Launch(user *user.User, config config.Config, dropletSize string, dropletRe
 
 	// Add the droplet to the SSH config file
 	fmt.Println("Deleting old cloudexec instance from SSH config file...")
-	err = ssh.DeleteSSHConfig(user, "cloudexec")
+	err = ssh.DeleteSSHConfig("cloudexec")
 	if err != nil {
 		return fmt.Errorf("Failed to delete old cloudexec entry from SSH config file: %w", err)
 	}
 	fmt.Println("Adding droplet to SSH config file...")
-	err = ssh.AddSSHConfig(user, droplet.IP)
+	err = ssh.AddSSHConfig(droplet.IP)
 	if err != nil {
 		return fmt.Errorf("Failed to add droplet to SSH config file: %w", err)
 	}
 
 	// Ensure we can SSH into the droplet
 	fmt.Println("Ensuring we can SSH into the droplet...")
-	// sshConfigName := fmt.Sprintf("cloudexec-%v", dropletIp)
-	sshConfigName := "cloudexec"
-	sshConfigName = strings.ReplaceAll(sshConfigName, ".", "-")
-	sshConfigPath := filepath.Join(user.HomeDir, ".ssh", "config.d", sshConfigName)
-	err = ssh.WaitForSSHConnection(sshConfigPath)
+	err = ssh.WaitForSSHConnection()
 	if err != nil {
 		return fmt.Errorf("Failed to SSH into the droplet: %w", err)
 	}
