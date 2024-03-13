@@ -210,14 +210,14 @@ func main() {
 						return err
 					}
 
-          // deletes droplets per user feedback & returns a list of job IDs for state updates
-          confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+					// deletes droplets per user feedback & returns a list of job IDs for state updates
+					confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
-          if (len(confirmedToDelete) == 0) {
-            return nil
-          }
+					if len(confirmedToDelete) == 0 {
+						return nil
+					}
 
 					existingState, err := state.GetState(config, bucketName)
 					if err != nil {
@@ -264,16 +264,16 @@ func main() {
 					if err != nil {
 						return err
 					}
-          confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
+					confirmedToDelete, err := ConfirmDeleteDroplets(config, dropletName, instanceToJobs)
 					if err != nil {
 						return err
 					}
-          if (len(confirmedToDelete) > 0) {
-            err = ssh.DeleteSSHConfig(user, "cloudexec")
-            if err != nil {
-              return err
-            }
-          }
+					if len(confirmedToDelete) > 0 {
+						err = ssh.DeleteSSHConfig(user, "cloudexec")
+						if err != nil {
+							return err
+						}
+					}
 					return nil
 				},
 			},
@@ -487,7 +487,7 @@ func main() {
 					if err != nil {
 						return err
 					}
-          // If we got a job Id, get that job's state, else continue
+					// If we got a job Id, get that job's state, else continue
 					latestJob := existingState.GetLatestJob()
 					jobStatus := latestJob.Status
 

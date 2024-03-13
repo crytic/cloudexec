@@ -44,7 +44,7 @@ func ConfirmDeleteDroplets(config config.Config, dropletName string, instanceToJ
 				if err != nil {
 					return confirmedToDelete, fmt.Errorf("Failed to destroy droplet: %w", err)
 				}
-        confirmedToDelete = append(confirmedToDelete, instance.ID)
+				confirmedToDelete = append(confirmedToDelete, instance.ID)
 			}
 		}
 	} else {

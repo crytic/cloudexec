@@ -182,13 +182,13 @@ func (s *State) CancelRunningJobs(config config.Config, bucketName string, toCan
 	// Mark any running jobs as cancelled
 	for i, job := range s.Jobs {
 		if job.Status == Running || job.Status == Provisioning {
-      for _, id := range toCancel {
-        if id == job.ID {
-          fmt.Printf("Setting status of job %d to 'Cancelled'\n", job.ID)
-          s.Jobs[i].Status = Cancelled
-          break
-        }
-      }
+			for _, id := range toCancel {
+				if id == job.ID {
+					fmt.Printf("Setting status of job %d to 'Cancelled'\n", job.ID)
+					s.Jobs[i].Status = Cancelled
+					break
+				}
+			}
 		}
 	}
 
