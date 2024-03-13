@@ -27,15 +27,15 @@ func Configure() error {
 	if err != nil {
 		return err
 	}
-	apiKey, err := promptSecretInput("Digital Ocean API key or reference", "op://private/DigitalOcean/api token")
+	apiKey, err := promptSecretInput("Digital Ocean API key or reference", "op://Private/DigitalOcean/ApiKey")
 	if err != nil {
 		return err
 	}
-	spacesAccessKey, err := promptSecretInput("Digital Ocean Spaces access key ID or reference", "op://private/DigitalOcean/spaces access key id")
+	spacesAccessKey, err := promptSecretInput("Digital Ocean Spaces access key ID or reference", "op://Private/DigitalOcean/SpacesKeyID")
 	if err != nil {
 		return err
 	}
-	spacesSecretKey, err := promptSecretInput("Digital Ocean Spaces secret access key or reference", "op://private/DigitalOcean/spaces secret access key")
+	spacesSecretKey, err := promptSecretInput("Digital Ocean Spaces secret access key or reference", "op://Private/DigitalOcean/SpacesSecret")
 	if err != nil {
 		return err
 	}
