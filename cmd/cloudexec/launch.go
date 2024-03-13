@@ -107,7 +107,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	newState := &state.State{}
 	startedAt := time.Now().Unix()
 
-	newJob := state.JobInfo{
+	newJob := state.Job{
 		Name:      lc.Input.JobName,
 		ID:        thisJobId,
 		Status:    state.Provisioning,
@@ -168,13 +168,8 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	}
 
 	// Add the droplet to the SSH config file
-	fmt.Println("Deleting old cloudexec instance from SSH config file...")
-	err = ssh.DeleteSSHConfig("cloudexec")
-	if err != nil {
-		return fmt.Errorf("Failed to delete old cloudexec entry from SSH config file: %w", err)
-	}
 	fmt.Println("Adding droplet to SSH config file...")
-	err = ssh.AddSSHConfig(droplet.IP)
+	err = ssh.AddSSHConfig(thisJobId, droplet.IP)
 	if err != nil {
 		return fmt.Errorf("Failed to add droplet to SSH config file: %w", err)
 	}

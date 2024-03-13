@@ -308,6 +308,46 @@ func main() {
 			},
 
 			{
+				Name:  "cancel",
+				Usage: "Cancels any running cloudexec jobs",
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "job",
+						Value: 0,
+						Usage: "Optional job ID to get logs from",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					// Abort on configuration error
+					if configErr != nil {
+						return configErr
+					}
+					slug := fmt.Sprintf("cloudexec-%s", config.Username)
+					// Initialize the s3 state
+					err := Init(config, slug)
+					if err != nil {
+						return err
+					}
+
+					existingState, err := state.GetState(config, slug)
+					if err != nil {
+						return err
+					}
+
+          jobID := c.Int64("job")
+          var targetJob *state.Job
+          if jobID == 0 {
+            targetJob = existingState.GetLatestJob()
+          } else {
+            targetJob = existingState.GetJob(jobID)
+          }
+
+          CancelJob(targetJob)
+          return nil
+        },
+      },
+
+			{
 				Name:  "clean",
 				Usage: "Cleans up any running cloudexec droplets and clears the spaces bucket",
 				Action: func(*cli.Context) error {
@@ -335,56 +375,12 @@ func main() {
 						return err
 					}
 					if len(confirmedToDelete) > 0 {
-						err = ssh.DeleteSSHConfig("cloudexec")
+						err = ssh.DeleteSSHConfig(0)
 						if err != nil {
 							return err
 						}
 					}
 					return nil
-				},
-			},
-
-			{
-				Name:  "cancel",
-				Usage: "Cancels any running cloudexec jobs",
-				Action: func(*cli.Context) error {
-					// Abort on configuration error
-					if configErr != nil {
-						return configErr
-					}
-					slug := fmt.Sprintf("cloudexec-%s", config.Username)
-					// Initialize the s3 state
-					err := Init(config, slug)
-					if err != nil {
-						return err
-					}
-					instanceToJobs, err := state.GetJobIdsByInstance(config, slug)
-					if err != nil {
-						return err
-					}
-					// deletes droplets per feedback & returns a list of job IDs for state updates
-					confirmedToDelete, err := ConfirmDeleteDroplets(config, slug, instanceToJobs)
-					if err != nil {
-						return err
-					}
-					if len(confirmedToDelete) == 0 {
-						return nil
-					}
-					existingState, err := state.GetState(config, slug)
-					if err != nil {
-						return err
-					}
-					// mark any running jobs as cancelled
-					err = existingState.CancelRunningJobs(config, slug, confirmedToDelete)
-					if err != nil {
-						return err
-					}
-					err = ssh.DeleteSSHConfig("cloudexec")
-					if err != nil {
-						return err
-					}
-					return nil
-
 				},
 			},
 
@@ -446,7 +442,7 @@ func main() {
 								return nil
 							}
 							newState := &state.State{}
-							deleteJob := state.JobInfo{
+							deleteJob := state.Job{
 								ID:     id,
 								Delete: true,
 							}

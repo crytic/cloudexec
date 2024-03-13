@@ -24,7 +24,7 @@ const (
 	Timedout     JobStatus = "timedout"
 )
 
-type JobInfo struct {
+type Job struct {
 	Name        string    `json:"name"`
 	ID          int64     `json:"id"`
 	StartedAt   int64     `json:"started_at"` // Unix timestamp
@@ -36,7 +36,7 @@ type JobInfo struct {
 }
 
 type State struct {
-	Jobs []JobInfo `json:"jobs"`
+	Jobs []Job `json:"jobs"`
 }
 
 func GetState(config config.Config, bucketName string) (*State, error) {
@@ -63,6 +63,16 @@ func GetState(config config.Config, bucketName string) (*State, error) {
 	}
 
 	return &state, nil
+}
+
+// GetJob returns a job with the specified ID or nil if not found.
+func (s *State) GetJob(jobID int64) *Job {
+	for _, job := range s.Jobs {
+		if job.ID == jobID {
+			return &job
+		}
+	}
+	return nil
 }
 
 func UpdateState(config config.Config, bucketName string, newState *State) error {
@@ -135,7 +145,7 @@ func MergeStates(existingState, newState *State) {
 }
 
 // Helper function to remove deleted jobs from the new state
-func removeDeletedJobs(jobs []JobInfo, deletedJobs map[int64]bool) []JobInfo {
+func removeDeletedJobs(jobs []Job, deletedJobs map[int64]bool) []Job {
 	filteredJobs := jobs[:0]
 	for _, job := range jobs {
 		if !deletedJobs[job.ID] {
@@ -146,22 +156,12 @@ func removeDeletedJobs(jobs []JobInfo, deletedJobs map[int64]bool) []JobInfo {
 }
 
 // CreateJob adds a new job to the state.
-func (s *State) CreateJob(job JobInfo) {
+func (s *State) CreateJob(job Job) {
 	s.Jobs = append(s.Jobs, job)
 }
 
-// GetJob returns a job with the specified ID or nil if not found.
-func (s *State) GetJob(jobID int64) *JobInfo {
-	for _, job := range s.Jobs {
-		if job.ID == jobID {
-			return &job
-		}
-	}
-	return nil
-}
-
 // GetLatestJob returns the latest job in the state.
-func (s *State) GetLatestJob() *JobInfo {
+func (s *State) GetLatestJob() *Job {
 	if len(s.Jobs) > 0 {
 		return &s.Jobs[len(s.Jobs)-1]
 	}
@@ -203,8 +203,8 @@ func (s *State) CancelRunningJobs(config config.Config, bucketName string, toCan
 	return nil
 }
 
-func GetLatestCompletedJob(bucketName string, state *State) (*JobInfo, error) {
-	var latestCompletedJob *JobInfo
+func GetLatestCompletedJob(bucketName string, state *State) (*Job, error) {
+	var latestCompletedJob *Job
 
 	// Find the latest completed job
 	for i := len(state.Jobs) - 1; i >= 0; i-- {

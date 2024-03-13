@@ -21,7 +21,7 @@ import (
 
 const HostConfigTemplate = `
 # Added by cloudexec
-Host {{.Host}}
+Host cloudexec-{{.JobID}}
   HostName {{.IPAddress}}
   User root
   IdentityFile {{.IdentityFile}}
@@ -34,7 +34,7 @@ Host {{.Host}}
 `
 
 type HostConfig struct {
-	Host         string
+	JobID        int64
 	IPAddress    string
 	IdentityFile string
 }
@@ -55,15 +55,12 @@ func EnsureSSHIncludeConfig() error {
 		return err
 	}
 	configPath := filepath.Join(sshDir, "config")
-
 	// Create the SSH directory if it does not exist
 	err = os.MkdirAll(sshDir, 0700)
 	if err != nil {
 		return fmt.Errorf("Failed to create SSH directory: %w", err)
 	}
-
 	var configFileContent string
-
 	// Check if the config file exists
 	if _, err = os.Stat(configPath); os.IsNotExist(err) {
 		// If the config file does not exist, create it with the includeString line
@@ -74,9 +71,7 @@ func EnsureSSHIncludeConfig() error {
 		if err != nil {
 			return fmt.Errorf("Failed to read main SSH config file: %w", err)
 		}
-
 		configFileContent = string(content)
-
 		// Check if the includeString line is present
 		if !strings.Contains(configFileContent, includeString) {
 			// If not present, add the line to the top of the file
@@ -86,17 +81,15 @@ func EnsureSSHIncludeConfig() error {
 			return nil
 		}
 	}
-
 	// Write the updated content to the config file
 	err = os.WriteFile(configPath, []byte(configFileContent), 0600)
 	if err != nil {
 		return fmt.Errorf("Failed to write main SSH config file: %w", err)
 	}
-
 	return nil
 }
 
-func AddSSHConfig(ipAddress string) error {
+func AddSSHConfig(jobId int64, ipAddress string) error {
 	err := EnsureSSHIncludeConfig()
 	if err != nil {
 		return fmt.Errorf("Failed to validate main SSH config: %w", err)
@@ -105,30 +98,24 @@ func AddSSHConfig(ipAddress string) error {
 	if err != nil {
 		return err
 	}
-
 	configDir := filepath.Join(sshDir, "config.d")
-	// fileIpAddress := strings.Replace(ipAddress, ".", "-", -1)
-	// configName := fmt.Sprintf("cloudexec-%v", fileIpAddress)
-	configName := "cloudexec"
+	configName := fmt.Sprintf("cloudexec-%v", jobId)
 	configPath := filepath.Join(configDir, configName)
 	identityFile := filepath.Join(sshDir, "cloudexec-key")
-
 	// Create the SSH config directory if it does not exist
 	err = os.MkdirAll(configDir, 0700)
 	if err != nil {
 		return fmt.Errorf("Failed to create cloudexec SSH config directory: %w", err)
 	}
-
 	// If the config file does not exist, create it
 	configFile, err := os.Create(configPath)
 	if err != nil {
 		return fmt.Errorf("Failed to create SSH cloudexec config file: %w", err)
 	}
 	defer configFile.Close()
-
 	// Write the templated host config to file
 	config := HostConfig{
-		Host:         "cloudexec",
+		JobID:        jobId,
 		IPAddress:    ipAddress,
 		IdentityFile: identityFile,
 	}
@@ -141,11 +128,10 @@ func AddSSHConfig(ipAddress string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to write cloudexec SSH config to file: %w", err)
 	}
-
 	return nil
 }
 
-func DeleteSSHConfig(filename string) error {
+func DeleteSSHConfig(jobId int64) error {
 	err := EnsureSSHIncludeConfig()
 	if err != nil {
 		return fmt.Errorf("Failed to validate SSH config: %w", err)
@@ -154,9 +140,9 @@ func DeleteSSHConfig(filename string) error {
 	if err != nil {
 		return err
 	}
-
 	configDir := filepath.Join(sshDir, "config.d")
-	configPath := filepath.Join(configDir, filename)
+	configName := fmt.Sprintf("cloudexec-%v", jobId)
+	configPath := filepath.Join(configDir, configName)
 	err = os.Remove(configPath)
 	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("unable to remove config file from config.d: %w", err)
