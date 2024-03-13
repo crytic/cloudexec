@@ -161,7 +161,7 @@ DIGITALOCEAN_SPACES_SECRET_ACCESS_KEY
 DIGITALOCEAN_SPACES_REGION
 ```
 
-Remember, if you save secret values to a `.env` file, never commit it to any version control system. Add such `.env` files to your project's `.gitignore` file to help prevent mistakes.
+Remember, if you save secret values to a `.env` file, never commit it to any version control system. Add such `.env` files to your project's `.gitignore` file to help prevent mistakes. Even when not committed, plaintext secrets in a `.env` file can pose security risks so we recommend using a dedicated secret management tool such as 1Password.
 
 Confirm `cloudexec` is authorized to access to DigitalOcean.
 
@@ -263,7 +263,7 @@ cloudexec cancel
 cloudexec clean
 ```
 
-Note that there is a delay of up to 2 weeks while deleting files from Digital Ocean Spaces buckets. Files cannot be accessed or overwritten while such delays are pending, so plan ahead. This delay is enforced by Digital Ocean, cloudexec is not able to influence it.
+Note that there is a delay of up to 2 weeks while deleting files from Digital Ocean Spaces buckets. Be aware that during this delay, the files will continue to occupy space in your bucket and may incur storage costs. If you need to manage your storage usage or costs, consider this delay when planning your data management strategy. This delay is managed by Digital Ocean, cloudexec is not able to influence it.
 
 ## Optional: Create a CloudExec DigitalOcean image
 
