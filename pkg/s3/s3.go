@@ -18,14 +18,14 @@ import (
 )
 
 /*
- * the bucket hub, everything related to s3-style buckets of files
+ * The bucket hub, everything related to s3-style buckets of files
  * exports the following functions:
  * - ListBuckets(config config.Config) ([]string, error)
- * - CreateBucket(config config.Config, bucket string) error
- * - PutObject(config config.Config, bucket string, key string, value []byte) error
- * - GetObject(config config.Config, bucket string, key string) ([]byte, error)
- * - ListObjects(config config.Config, bucket string, prefix string) ([]string, error)
- * - DeleteObject(config config.Config, bucket string, key string) error
+ * - CreateBucket(config config.Config) error
+ * - PutObject(config config.Config, key string, value []byte) error
+ * - GetObject(config config.Config, key string) ([]byte, error)
+ * - ListObjects(config config.Config, prefix string) ([]string, error)
+ * - DeleteObject(config config.Config, key string) error
  */
 
 var s3Client *s3.S3
@@ -96,7 +96,8 @@ func ListBuckets(config config.Config) ([]string, error) {
 	return buckets, nil
 }
 
-func SetVersioning(config config.Config, bucket string) error {
+func SetVersioning(config config.Config) error {
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	// create a non-init client
 	s3Client, err := initializeS3Client(config, false)
 	if err != nil {
@@ -104,18 +105,19 @@ func SetVersioning(config config.Config, bucket string) error {
 	}
 	// ensure versioning is enabled on the bucket
 	_, err = s3Client.PutBucketVersioning(&s3.PutBucketVersioningInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(bucketName),
 		VersioningConfiguration: &s3.VersioningConfiguration{
 			Status: aws.String("Enabled"),
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to enable versioning on bucket '%s': %w", bucket, err)
+		return fmt.Errorf("Failed to enable versioning on bucket '%s': %w", bucketName, err)
 	}
 	return nil
 }
 
-func CreateBucket(config config.Config, bucket string) error {
+func CreateBucket(config config.Config) error {
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	// create an initialization client
 	s3Client, err := initializeS3Client(config, true)
 	if err != nil {
@@ -124,26 +126,27 @@ func CreateBucket(config config.Config, bucket string) error {
 
 	// execution bucket creation
 	_, err = s3Client.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to create bucket '%s': %w", bucket, err)
+		return fmt.Errorf("Failed to create bucket '%s': %w", bucketName, err)
 	}
 
 	// wait for the bucket to be available
 	err = s3Client.WaitUntilBucketExists(&s3.HeadBucketInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to wait for bucket '%s': %w", bucket, err)
+		return fmt.Errorf("Failed to wait for bucket '%s': %w", bucketName, err)
 	}
 
-	fmt.Printf("Created bucket '%s'...\n", bucket)
+	fmt.Printf("Created bucket '%s'...\n", bucketName)
 	return nil
 }
 
 // Note: will overwrite existing object.
-func PutObject(config config.Config, bucket string, key string, value []byte) error {
+func PutObject(config config.Config, key string, value []byte) error {
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	// create a client
 	s3Client, err := initializeS3Client(config, false)
 	if err != nil {
@@ -153,13 +156,13 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 	// If zero-length value is given, create a directory instead of a file
 	if len(value) == 0 {
 		_, err = s3Client.PutObject(&s3.PutObjectInput{
-			Bucket: aws.String(bucket),
+			Bucket: aws.String(bucketName),
 			Key:    aws.String(key),
 		})
 		if err != nil {
-			return fmt.Errorf("Failed to create %s directory in bucket %s: %w", key, bucket, err)
+			return fmt.Errorf("Failed to create %s directory in bucket %s: %w", key, bucketName, err)
 		}
-		fmt.Printf("Successfully created directory in s3 bucket: %s/%s\n", bucket, key)
+		fmt.Printf("Successfully created directory in s3 bucket: %s/%s\n", bucketName, key)
 		return nil
 	}
 
@@ -170,7 +173,7 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 
 	// Upload the file
 	_, err = s3Client.PutObject(&s3.PutObjectInput{
-		Bucket:      aws.String(bucket),
+		Bucket:      aws.String(bucketName),
 		Key:         aws.String(key),
 		Body:        aws.ReadSeekCloser(bytes.NewReader(value)),
 		ACL:         aws.String("private"),
@@ -178,16 +181,16 @@ func PutObject(config config.Config, bucket string, key string, value []byte) er
 		ContentMD5:  aws.String(md5HashBase64),
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to upload file %s to bucket %s: %w", key, bucket, err)
+		return fmt.Errorf("Failed to upload file %s to bucket %s: %w", key, bucketName, err)
 	}
 
-	fmt.Printf("Successfully uploaded file to s3 bucket: %s/%s\n", bucket, key)
+	fmt.Printf("Successfully uploaded file to s3 bucket: %s/%s\n", bucketName, key)
 	return nil
 }
 
-func ObjectExists(config config.Config, bucket string, key string) (bool, error) {
+func ObjectExists(config config.Config, key string) (bool, error) {
 	// Get a list of objects that are prefixed by the target key
-	objects, err := ListObjects(config, bucket, key)
+	objects, err := ListObjects(config, key)
 	if err != nil {
 		return false, err
 	}
@@ -196,7 +199,8 @@ func ObjectExists(config config.Config, bucket string, key string) (bool, error)
 	return len(objects) != 0, nil
 }
 
-func GetObject(config config.Config, bucket string, key string) ([]byte, error) {
+func GetObject(config config.Config, key string) ([]byte, error) {
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	// create a client
 	s3Client, err := initializeS3Client(config, false)
 	if err != nil {
@@ -206,7 +210,7 @@ func GetObject(config config.Config, bucket string, key string) ([]byte, error) 
 	const maxRetries = 3
 	for i := 1; i <= maxRetries; i++ {
 		resp, err := s3Client.GetObject(&s3.GetObjectInput{
-			Bucket: aws.String(bucket),
+			Bucket: aws.String(bucketName),
 			Key:    aws.String(key),
 		})
 		if err != nil {
@@ -250,7 +254,8 @@ func GetObject(config config.Config, bucket string, key string) ([]byte, error) 
 	return nil, fmt.Errorf("Failed to get from Spaces bucket: maximum number of retries exceeded")
 }
 
-func DeleteObject(config config.Config, bucket string, key string) error {
+func DeleteObject(config config.Config, key string) error {
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	// create a client
 	s3Client, err := initializeS3Client(config, false)
 	if err != nil {
@@ -258,19 +263,20 @@ func DeleteObject(config config.Config, bucket string, key string) error {
 	}
 
 	deleteObjectInput := &s3.DeleteObjectInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 	}
 
 	_, err = s3Client.DeleteObject(deleteObjectInput)
 	if err != nil {
-		return fmt.Errorf("Failed to delete object '%s' in bucket '%s': %w", key, bucket, err)
+		return fmt.Errorf("Failed to delete object '%s' in bucket '%s': %w", key, bucketName, err)
 	}
 
 	return nil
 }
 
-func ListObjects(config config.Config, bucket string, prefix string) ([]string, error) {
+func ListObjects(config config.Config, prefix string) ([]string, error) {
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	var objects []string
 
 	// create a client
@@ -283,13 +289,13 @@ func ListObjects(config config.Config, bucket string, prefix string) ([]string, 
 	if len(prefix) == 0 {
 		// List all objects in the bucket
 		listObjectsInput = &s3.ListObjectsInput{
-			Bucket:  aws.String(bucket),
+			Bucket:  aws.String(bucketName),
 			MaxKeys: aws.Int64(1000),
 		}
 	} else {
 		// List all objects with keys that begin with the given prefix
 		listObjectsInput = &s3.ListObjectsInput{
-			Bucket:  aws.String(bucket),
+			Bucket:  aws.String(bucketName),
 			Prefix:  aws.String(prefix),
 			MaxKeys: aws.Int64(1000),
 		}
@@ -297,7 +303,7 @@ func ListObjects(config config.Config, bucket string, prefix string) ([]string, 
 
 	listObjectsOutput, err := s3Client.ListObjects(listObjectsInput)
 	if err != nil {
-		return objects, fmt.Errorf("Failed to list objects in bucket '%s': %w", bucket, err)
+		return objects, fmt.Errorf("Failed to list objects in bucket '%s': %w", bucketName, err)
 	}
 
 	// extract just the keys from each object

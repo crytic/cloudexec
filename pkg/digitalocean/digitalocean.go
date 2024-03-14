@@ -38,7 +38,7 @@ type Snapshot struct {
  * exports the following functions:
  * - CheckAuth(config config.Config) (string, error)
  * - CreateDroplet(config config.Config, username string, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error)
- * - GetDropletsByName(config config.Config, dropletName string) ([]Droplet, error)
+ * - GetAllDroplets(config config.Config, dropletName string) ([]Droplet, error)
  * - DeleteDroplet(config config.Config, dropletID int64) error
  * - GetLatestSnapshot(config config.Config) (Snapshot, error)
  */
@@ -245,8 +245,9 @@ func GetDropletById(config config.Config, id int64) (Droplet, error) {
 	}, nil
 }
 
-// GetDropletsByName returns a list of droplets with the given tag using a godo client
-func GetDropletsByName(config config.Config, dropletName string) ([]Droplet, error) {
+// GetAllDroplets returns a list of droplets with the given tag using a godo client
+func GetAllDroplets(config config.Config) ([]Droplet, error) {
+	dropletName := fmt.Sprintf("cloudexec-%s", config.Username)
 	var droplets []Droplet
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)

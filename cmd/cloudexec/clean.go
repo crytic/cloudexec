@@ -11,16 +11,16 @@ import (
 )
 
 func ConfirmCancelAll(config config.Config, existingState *state.State) error {
-	slug := fmt.Sprintf("cloudexec-%s", config.Username)
-	droplets, err := do.GetDropletsByName(config, slug)
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
+	droplets, err := do.GetAllDroplets(config)
 	if err != nil {
 		return fmt.Errorf("Failed to get droplets by name: %w", err)
 	}
 	if len(droplets) == 0 {
-		fmt.Printf("Zero %s droplets found\n", slug)
+		fmt.Printf("Zero %s droplets found\n", bucketName)
 		return nil
 	}
-	fmt.Printf("Existing %s droplet(s) found:\n", slug)
+	fmt.Printf("Existing %s droplet(s) found:\n", bucketName)
 	for _, job := range existingState.Jobs {
 		err = CancelJob(&job, existingState, config)
 		if err != nil {
@@ -30,8 +30,9 @@ func ConfirmCancelAll(config config.Config, existingState *state.State) error {
 	return nil
 }
 
-func ResetBucket(config config.Config, bucketName string) error {
-	objects, err := s3.ListObjects(config, bucketName, "")
+func ResetBucket(config config.Config) error {
+	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
+	objects, err := s3.ListObjects(config, "")
 	if err != nil {
 		return fmt.Errorf("Failed to list objects in bucket '%s': %w", bucketName, err)
 	}
@@ -51,7 +52,7 @@ func ResetBucket(config config.Config, bucketName string) error {
 			// Delete all objects in the bucket
 			for _, object := range objects {
 				fmt.Println("Deleting object: ", object)
-				err = s3.DeleteObject(config, bucketName, object)
+				err = s3.DeleteObject(config, object)
 				if err != nil {
 					return err
 				}

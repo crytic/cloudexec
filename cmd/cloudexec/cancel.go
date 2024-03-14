@@ -31,8 +31,7 @@ func CancelJob(job *state.Job, existingState *state.State, config config.Config)
 			return fmt.Errorf("Failed to delete ssh config: %w", err)
 		}
 		fmt.Printf("Marking job %v as cancelled...\n", job.Droplet.ID)
-		slug := fmt.Sprintf("cloudexec-%s", config.Username)
-		err = existingState.CancelRunningJob(config, slug, job.ID)
+		err = existingState.CancelRunningJob(config, job.ID)
 		if err != nil {
 			return fmt.Errorf("Failed to mark job as cancelled: %w", err)
 		}

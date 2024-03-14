@@ -11,7 +11,7 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
-func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath string, destPath string) error {
+func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath string) error {
 	// Compute the path for the zipped archive of sourcePath
 	zipFileName := "input.zip"
 	zipFilePath := filepath.Join(os.TempDir(), zipFileName)
@@ -132,7 +132,7 @@ func UploadDirectoryToSpaces(config config.Config, bucket string, sourcePath str
 	// Upload the zipped archive
 	destKey := filepath.Join(destPath, "input.zip")
 	fmt.Printf("Uploading archive (%v bytes) to %s\n", len(fileBytes), destKey)
-	err = s3.PutObject(config, bucket, destKey, fileBytes)
+	err = s3.PutObject(config, destKey, fileBytes)
 	if err != nil {
 		return err
 	}

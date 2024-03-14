@@ -10,7 +10,7 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
-func DownloadJobOutput(config config.Config, jobID int, localPath string, bucketName string) error {
+func DownloadJobOutput(config config.Config, jobID int, localPath string) error {
 	bucketPrefix := fmt.Sprintf("job-%d/output", jobID)
 
 	// Check if the local path is a directory, if not, create it
@@ -21,7 +21,7 @@ func DownloadJobOutput(config config.Config, jobID int, localPath string, bucket
 		}
 	}
 
-	objectKeys, err := s3.ListObjects(config, bucketName, bucketPrefix)
+	objectKeys, err := s3.ListObjects(config, bucketPrefix)
 	if err != nil {
 		return fmt.Errorf("Failed to list bucket objects: %w", err)
 	}
@@ -32,7 +32,7 @@ func DownloadJobOutput(config config.Config, jobID int, localPath string, bucket
 
 			if strings.HasSuffix(objectKey, "/") {
 				// It's a directory, list objects inside this directory and download them
-				subdirObjects, err := s3.ListObjects(config, bucketName, objectKey)
+				subdirObjects, err := s3.ListObjects(config, objectKey)
 				if err != nil {
 					return fmt.Errorf("Failed to list objects in %s subdirectory: %w", objectKey, err)
 				}
@@ -42,7 +42,7 @@ func DownloadJobOutput(config config.Config, jobID int, localPath string, bucket
 				}
 			} else {
 				// It's a file, download it
-				body, err := s3.GetObject(config, bucketName, objectKey)
+				body, err := s3.GetObject(config, objectKey)
 				if err != nil {
 					return fmt.Errorf("Failed to get %s object: %w", objectKey, err)
 				}
