@@ -175,16 +175,15 @@ func main() {
 						Value: 0,
 						Usage: "Optional job ID to pull results from",
 					},
+					&cli.StringFlag{
+						Name:  "path",
+						Usage: "Optional directory name where pulled data will be saved",
+					},
 				},
 				Action: func(c *cli.Context) error {
 					if configErr != nil {
 						return configErr // Abort on configuration error
 					}
-					// Check if the path is provided
-					if c.Args().Len() < 1 {
-						return fmt.Errorf("please provide a path to download job outputs to")
-					}
-					path := c.Args().Get(0)
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
 						return err
@@ -194,23 +193,19 @@ func main() {
 						return err
 					}
 					jobID := c.Int64("job")
-					if jobID != 0 {
-						err = DownloadJobOutput(config, jobID, path)
-						if err != nil {
-							return err
-						}
-						return nil
-					} else {
+					if jobID == 0 {
 						latestCompletedJob, err := state.GetLatestCompletedJob(existingState)
 						if err != nil {
 							return err
 						}
-						err = DownloadJobOutput(config, latestCompletedJob.ID, path)
-						if err != nil {
-							return err
-						}
-						return nil
+            jobID = latestCompletedJob.ID
 					}
+          path := c.String("path")
+          if path == "" {
+            path = fmt.Sprintf("cloudexec-%v", jobID)
+          }
+          err = DownloadJobOutput(config, jobID, path)
+          return err
 				},
 			},
 
@@ -404,16 +399,12 @@ func main() {
 						Value: 0,
 						Usage: "Job ID to fetch logs for and clean",
 					},
+					&cli.StringFlag{
+						Name:  "path",
+						Usage: "Optional directory name where pulled data will be saved",
+					},
 				},
 				Action: func(c *cli.Context) error {
-					// Check if the path is provided
-					if c.Args().Len() < 1 {
-						return fmt.Errorf("please provide a path to download job outputs to")
-					}
-					path := c.Args().Get(0)
-					if configErr != nil {
-						return configErr // Abort on configuration error
-					}
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
 						return err
@@ -436,6 +427,10 @@ func main() {
 						if err != nil {
 							return err
 						}
+          }
+          path := c.String("path")
+          if path == "" {
+            path = fmt.Sprintf("cloudexec-%v", jobID)
           }
 					// Pull all data
 					err = DownloadJobOutput(config, jobID, path)
