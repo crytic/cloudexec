@@ -10,8 +10,8 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
-func DownloadJobOutput(config config.Config, jobID int, localPath string) error {
-	bucketPrefix := fmt.Sprintf("job-%d/output", jobID)
+func DownloadJobOutput(config config.Config, jobID int64, localPath string) error {
+	bucketPrefix := fmt.Sprintf("job-%v/output", jobID)
 
 	// Check if the local path is a directory, if not, create it
 	if _, err := os.Stat(localPath); os.IsNotExist(err) {

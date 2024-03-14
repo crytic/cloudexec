@@ -193,8 +193,9 @@ func main() {
 					if err != nil {
 						return err
 					}
-					if c.Int("job") != 0 {
-						err = DownloadJobOutput(config, c.Int("job"), path)
+					jobID := c.Int64("job")
+					if jobID != 0 {
+						err = DownloadJobOutput(config, jobID, path)
 						if err != nil {
 							return err
 						}
@@ -204,7 +205,7 @@ func main() {
 						if err != nil {
 							return err
 						}
-						err = DownloadJobOutput(config, int(latestCompletedJob.ID), path)
+						err = DownloadJobOutput(config, latestCompletedJob.ID, path)
 						if err != nil {
 							return err
 						}
@@ -382,6 +383,61 @@ func main() {
 						}
 					}
 					return nil
+				},
+			},
+
+			{
+				Name:  "pull-and-clean",
+				Usage: "Pulls all output data then cleans up any info associated with the given job",
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "job",
+						Value: 0,
+						Usage: "Job ID to fetch logs for and clean",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					// Check if the path is provided
+					if c.Args().Len() < 1 {
+						return fmt.Errorf("please provide a path to download job outputs to")
+					}
+					path := c.Args().Get(0)
+					if configErr != nil {
+						return configErr // Abort on configuration error
+					}
+					err := Init(config) // Initialize the s3 state
+					if err != nil {
+						return err
+					}
+					existingState, err := state.GetState(config)
+					if err != nil {
+						return err
+					}
+					// If no job id provided, use latest completed job
+					jobID := c.Int64("job")
+					var targetJob *state.Job
+					if c.Int("job") != 0 {
+						targetJob, err := state.GetLatestCompletedJob(existingState)
+						if err != nil {
+							return err
+						}
+						jobID = targetJob.ID
+					}
+					// Pull all data
+					err = DownloadJobOutput(config, jobID, path)
+					if err != nil {
+						return err
+					}
+					// Cancel servers associated with this job if they're running
+					if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
+						err = ConfirmCancelJob(config, existingState, targetJob)
+						if err != nil {
+							return err
+						}
+					}
+					// Clean this job's data out of the bucket
+					err = CleanBucketJob(config, existingState, jobID)
+					return err
 				},
 			},
 
