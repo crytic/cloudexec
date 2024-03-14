@@ -151,7 +151,7 @@ func GetOrCreateSSHKeyPair() (string, error) {
 	return string(publicKeySSHFormat), nil
 }
 
-func AddSSHConfig(jobId int64, ipAddress string) error {
+func AddSSHConfig(jobID int64, ipAddress string) error {
 	err := EnsureSSHIncludeConfig()
 	if err != nil {
 		return fmt.Errorf("Failed to validate main SSH config: %w", err)
@@ -161,7 +161,7 @@ func AddSSHConfig(jobId int64, ipAddress string) error {
 		return err
 	}
 	configDir := filepath.Join(sshDir, "config.d")
-	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	hostname := fmt.Sprintf("cloudexec-%v", jobID)
 	configPath := filepath.Join(configDir, hostname)
 	identityFile := filepath.Join(sshDir, "cloudexec-key")
 	// Create the SSH config directory if it does not exist
@@ -177,7 +177,7 @@ func AddSSHConfig(jobId int64, ipAddress string) error {
 	defer configFile.Close()
 	// Write the templated host config to file
 	config := HostConfig{
-		JobID:        jobId,
+		JobID:        jobID,
 		IPAddress:    ipAddress,
 		IdentityFile: identityFile,
 	}
@@ -193,7 +193,7 @@ func AddSSHConfig(jobId int64, ipAddress string) error {
 	return nil
 }
 
-func DeleteSSHConfig(jobId int64) error {
+func DeleteSSHConfig(jobID int64) error {
 	err := EnsureSSHIncludeConfig()
 	if err != nil {
 		return fmt.Errorf("Failed to validate SSH config: %w", err)
@@ -203,7 +203,7 @@ func DeleteSSHConfig(jobId int64) error {
 		return err
 	}
 	configDir := filepath.Join(sshDir, "config.d")
-	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	hostname := fmt.Sprintf("cloudexec-%v", jobID)
 	configPath := filepath.Join(configDir, hostname)
 	err = os.Remove(configPath)
 	if err != nil && !os.IsNotExist(err) {
@@ -216,12 +216,12 @@ func DeleteSSHConfig(jobId int64) error {
 	return nil
 }
 
-func WaitForSSHConnection(jobId int64) error {
+func WaitForSSHConnection(jobID int64) error {
 	sshDir, err := getSSHDir()
 	if err != nil {
 		return err
 	}
-	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	hostname := fmt.Sprintf("cloudexec-%v", jobID)
 	hostname = strings.ReplaceAll(hostname, ".", "-")
 	sshConfigPath := filepath.Join(sshDir, "config.d", hostname)
 
@@ -283,8 +283,8 @@ func WaitForSSHConnection(jobId int64) error {
 	}
 }
 
-func StreamLogs(jobId int64) error {
-	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+func StreamLogs(jobID int64) error {
+	hostname := fmt.Sprintf("cloudexec-%v", jobID)
 	// Stream the logs from the server with tail -f
 	sshCmd := exec.Command("ssh", hostname, "tail", "-f", "/var/log/cloud-init-output.log")
 	sshCmd.Stdout = os.Stdout
@@ -296,8 +296,8 @@ func StreamLogs(jobId int64) error {
 	return nil
 }
 
-func AttachToTmuxSession(jobId int64) error {
-	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+func AttachToTmuxSession(jobID int64) error {
+	hostname := fmt.Sprintf("cloudexec-%v", jobID)
 	sshCmd := exec.Command("ssh", "-t", hostname, "tmux", "attach-session", "-t", "cloudexec")
 
 	// Connect the SSH command to the current terminal

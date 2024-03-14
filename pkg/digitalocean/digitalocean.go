@@ -37,7 +37,7 @@ type Snapshot struct {
  * the vps hub, everything related to digital ocean server management
  * exports the following functions:
  * - CheckAuth(config config.Config) (string, error)
- * - CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error)
+ * - CreateDroplet(config config.Config, region string, size string, userData string, jobID int64, publicKey string) (Droplet, error)
  * - GetAllDroplets(config config.Config) ([]Droplet, error)
  * - DeleteDroplet(config config.Config, dropletID int64) error
  * - GetLatestSnapshot(config config.Config) (Snapshot, error)
@@ -124,7 +124,7 @@ func CheckAuth(config config.Config) (string, error) {
 }
 
 // Launch a new droplet
-func CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error) {
+func CreateDroplet(config config.Config, region string, size string, userData string, jobID int64, publicKey string) (Droplet, error) {
 	var droplet Droplet
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
@@ -173,7 +173,7 @@ func CreateDroplet(config config.Config, region string, size string, userData st
 		Tags: []string{
 			cloudexecTag,
 			"Owner:" + config.Username,
-			"Job:" + fmt.Sprintf("%v", jobId),
+			"Job:" + fmt.Sprintf("%v", jobID),
 		},
 		// Don't install the droplet agent
 		WithDropletAgent: new(bool),

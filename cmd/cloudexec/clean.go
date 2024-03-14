@@ -35,12 +35,17 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 					return err
 				}
 			}
-			fmt.Printf("Deleted %d objects from bucket...\n", numToRm)
-			existingState.DeleteJob(jobID)
-			err = state.UpdateState(config, existingState)
-			if err != nil {
-				return fmt.Errorf("Error removing %s from state file: %w\n", prefix, err)
-			}
+			fmt.Printf("Deleted %d objects from bucket, removing job %v from state file..\n", numToRm, jobID)
+      newState := &state.State{}
+      deleteJob := state.Job{
+        ID:     jobID,
+        Delete: true,
+      }
+      newState.CreateJob(deleteJob)
+      err = state.MergeAndSave(config, newState)
+      if err != nil {
+        return fmt.Errorf("Error removing %s from state file: %w\n", prefix, err)
+      }
 		}
 	}
 	return nil

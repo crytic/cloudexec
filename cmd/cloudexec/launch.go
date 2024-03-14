@@ -115,7 +115,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	newState.CreateJob(newJob)
 	// sync state to bucket
 	fmt.Printf("Adding new job to the state...\n")
-	err = state.UpdateState(config, newState)
+	err = state.MergeAndSave(config, newState)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}
@@ -161,7 +161,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 		}
 	}
 	fmt.Printf("Uploading new state to %s\n", bucketName)
-	err = state.UpdateState(config, newState)
+	err = state.MergeAndSave(config, newState)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}

@@ -245,6 +245,9 @@ func main() {
 						jobID = targetJob.ID
 					} else {
 						targetJob = existingState.GetJob(jobID)
+            if targetJob == nil {
+              return fmt.Errorf("Job %v does not exist", jobID)
+            }
 					}
 					// If the target job is running, stream logs
 					jobStatus := targetJob.Status
@@ -325,6 +328,9 @@ func main() {
 						targetJob = existingState.GetLatestJob()
 					} else {
 						targetJob = existingState.GetJob(jobID)
+            if targetJob == nil {
+              return fmt.Errorf("Job %v does not exist", jobID)
+            }
 					}
 					err = ConfirmCancelJob(config, existingState, targetJob)
 					if err != nil {
@@ -370,6 +376,9 @@ func main() {
 						}
 					} else {
 						targetJob := existingState.GetJob(jobID)
+            if targetJob == nil {
+              return fmt.Errorf("Job %v does not exist", jobID)
+            }
 						// Cancel servers associated with this job if they're running
 						if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
 							err = ConfirmCancelJob(config, existingState, targetJob)
@@ -498,7 +507,7 @@ func main() {
 								Delete: true,
 							}
 							newState.CreateJob(deleteJob)
-							err = state.UpdateState(config, newState)
+							err = state.MergeAndSave(config, newState)
 							if err != nil {
 								return err
 							}
