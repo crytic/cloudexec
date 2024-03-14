@@ -48,9 +48,12 @@ var ctx context.Context
 
 const timeLayout = time.RFC3339
 
+const cloudexecTag = "Purpose:cloudexec"
+
 ////////////////////////////////////////
 // Internal Helper Functions
 
+// Create and cache a godo client
 func initializeDOClient(accessToken string) (*godo.Client, error) {
 	// Immediately return our cached client if available
 	if doClient != nil {
@@ -169,7 +172,7 @@ func CreateDroplet(config config.Config, username string, region string, size st
 			},
 		},
 		Tags: []string{
-			"Purpose:cloudexec",
+			cloudexecTag,
 			"Owner:" + username,
 			"Job:" + fmt.Sprintf("%v", jobId),
 		},
@@ -254,32 +257,38 @@ func GetAllDroplets(config config.Config) ([]Droplet, error) {
 	if err != nil {
 		return droplets, err
 	}
+  targetTag := fmt.Sprintf("Owner:%s", config.Username),
 
 	opts := &godo.ListOptions{}
 
-	for {
-		dropletList, resp, err := doClient.Droplets.ListByName(ctx, dropletName, opts)
+	for { // loop through all pages of the droplet list
+		myDroplets, resp, err := doClient.Droplets.ListByTag(ctx, targetTag, opts)
 		if err != nil {
 			return droplets, fmt.Errorf("Failed to fetch droplets by name: %w", err)
-		}
 
-		for _, droplet := range dropletList {
-			pubIp, err := droplet.PublicIPv4()
-			if err != nil {
-				return droplets, fmt.Errorf("Failed to fetch droplet IP: %w", err)
-			}
-			droplets = append(droplets, Droplet{
-				Name:    droplet.Name,
-				ID:      int64(droplet.ID),
-				IP:      pubIp,
-				Created: droplet.Created,
-				Size: Size{
-					CPUs:       int64(droplet.Vcpus),
-					Disk:       int64(droplet.Disk),
-					Memory:     int64(droplet.Memory),
-					HourlyCost: float64(droplet.Size.PriceHourly),
-				},
-			})
+		for _, droplet := range myDroplets {
+      for _, tag := range droplet.Tags {
+        if tag != cloudexecTag { // don't do anything until we find a cloudexec tag
+          continue
+        }
+        pubIp, err := droplet.PublicIPv4()
+        if err != nil {
+          return droplets, fmt.Errorf("Failed to fetch droplet IP: %w", err)
+        }
+        droplets = append(droplets, Droplet{
+          Name:    droplet.Name,
+          ID:      int64(droplet.ID),
+          IP:      pubIp,
+          Created: droplet.Created,
+          Size: Size{
+            CPUs:       int64(droplet.Vcpus),
+            Disk:       int64(droplet.Disk),
+            Memory:     int64(droplet.Memory),
+            HourlyCost: float64(droplet.Size.PriceHourly),
+          },
+        })
+        break
+      }
 		}
 
 		if resp.Links == nil || resp.Links.IsLastPage() {
