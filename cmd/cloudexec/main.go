@@ -325,7 +325,7 @@ func main() {
 					} else {
 						targetJob = existingState.GetJob(jobID)
 					}
-					err = ConfirmCancelJob(targetJob, existingState, config)
+					err = ConfirmCancelJob(config, existingState, targetJob)
 					if err != nil {
 						return err
 					}
@@ -356,20 +356,30 @@ func main() {
 						return err
 					}
 					jobID := c.Int64("job")
-					// var targetJob *state.Job
 					if jobID == 0 { // If no job provided, clean everything
+						// Cancel running servers
 						err = ConfirmCancelAll(config, existingState)
 						if err != nil {
 							return err
 						}
-						// clean existing files from the bucket
-						err = CleanBucketAll(config)
+						// Flag all job data for deletion
+						err = CleanBucketAll(config, existingState)
 						if err != nil {
 							return err
 						}
-						// } else {
-						// 	targetJob = existingState.GetJob(jobID)
-						// TODO
+					} else {
+						targetJob := existingState.GetJob(jobID)
+						// Cancel servers associated with this job if they're running
+						if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
+							err = ConfirmCancelJob(config, existingState, targetJob)
+							if err != nil {
+								return err
+							}
+						}
+						err = CleanBucketJob(config, existingState, jobID)
+						if err != nil {
+							return err
+						}
 					}
 					return nil
 				},
