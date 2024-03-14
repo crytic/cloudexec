@@ -425,13 +425,18 @@ func main() {
 					// If no job id provided, use latest completed job
 					jobID := c.Int64("job")
 					var targetJob *state.Job
-					if c.Int("job") != 0 {
-						targetJob, err := state.GetLatestCompletedJob(existingState)
+					if c.Int("job") == 0 {
+						targetJob, err = state.GetLatestCompletedJob(existingState)
 						if err != nil {
 							return err
 						}
 						jobID = targetJob.ID
-					}
+					} else {
+						targetJob = existingState.GetJob(jobID)
+						if err != nil {
+							return err
+						}
+          }
 					// Pull all data
 					err = DownloadJobOutput(config, jobID, path)
 					if err != nil {

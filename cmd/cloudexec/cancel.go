@@ -6,7 +6,6 @@ import (
 
 	"github.com/crytic/cloudexec/pkg/config"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
-	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
 )
 
@@ -23,11 +22,6 @@ func ConfirmCancelJob(config config.Config, existingState *state.State, job *sta
 		err := do.DeleteDroplet(config, job.Droplet.ID)
 		if err != nil {
 			return fmt.Errorf("Failed to destroy droplet: %w", err)
-		}
-		fmt.Printf("Removing ssh config for droplet %v...\n", job.Droplet.ID)
-		err = ssh.DeleteSSHConfig(job.ID)
-		if err != nil {
-			return fmt.Errorf("Failed to delete ssh config: %w", err)
 		}
 		fmt.Printf("Marking job %v as cancelled...\n", job.Droplet.ID)
 		err = existingState.CancelRunningJob(config, job.ID)

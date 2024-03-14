@@ -132,9 +132,11 @@ func CreateDroplet(config config.Config, region string, size string, userData st
 		return droplet, err
 	}
 
-	dropletName := fmt.Sprintf("cloudexec-%v", config.Username)
+	keyName := fmt.Sprintf("cloudexec-%v", config.Username)
+	sshKeyFingerprint, savedPublicKey, err := findSSHKeyOnDigitalOcean(keyName)
 
-	sshKeyFingerprint, savedPublicKey, err := findSSHKeyOnDigitalOcean(dropletName)
+	dropletName := fmt.Sprintf("%s-%v", keyName, jobID)
+
 	if err == nil {
 		if publicKey != savedPublicKey {
 			return droplet, fmt.Errorf("Keys do not match! Consider removing your old key from DigitalOcean Security settings and re-running 'cloudexec launch'.")

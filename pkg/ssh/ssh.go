@@ -278,7 +278,7 @@ func WaitForSSHConnection(jobID int64) error {
 			return fmt.Errorf("Timed out waiting for SSH connection: %w", err)
 		}
 
-		fmt.Printf("Can't connect to %s@%s:%s yet, retrying in %v...\n", user, ipAddress, port, retryInterval)
+		fmt.Printf("Can't connect to %s yet, retrying in %v...\n", hostname, retryInterval)
 		time.Sleep(retryInterval)
 	}
 }

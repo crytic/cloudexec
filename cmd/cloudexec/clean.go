@@ -6,6 +6,7 @@ import (
 
 	"github.com/crytic/cloudexec/pkg/config"
 	"github.com/crytic/cloudexec/pkg/s3"
+	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
 )
 
@@ -45,6 +46,11 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
       err = state.MergeAndSave(config, newState)
       if err != nil {
         return fmt.Errorf("Error removing %s from state file: %w\n", prefix, err)
+      }
+      fmt.Printf("Removing ssh config for job %v...\n", jobID)
+      err = ssh.DeleteSSHConfig(jobID)
+      if err != nil {
+        return fmt.Errorf("Failed to delete ssh config: %w", err)
       }
 		}
 	}
