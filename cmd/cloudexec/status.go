@@ -58,13 +58,13 @@ func PrintStatus(config config.Config, showAll bool) error {
 	}
 
 	// Find the latest completed job
-	latestCompletedJob, err := state.GetLatestCompletedJob(existingState)
+	latestJob, err := state.GetLatestJob(existingState)
 	if err != nil {
 		return err
 	}
 
 	for _, job := range existingState.Jobs {
-		if showAll || (job.Status == state.Running || job.Status == state.Provisioning) || (latestCompletedJob != nil && job.ID == latestCompletedJob.ID) {
+		if showAll || (job.Status == state.Running || job.Status == state.Provisioning) || (latestJob != nil && job.ID == latestJob.ID) {
 
 			latestUpdate := func() int64 {
 				if job.CompletedAt == 0 {
