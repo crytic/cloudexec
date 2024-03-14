@@ -236,24 +236,30 @@ func main() {
 					if err != nil {
 						return err
 					}
-					latestJob := existingState.GetLatestJob()
-					jobID := int(latestJob.ID)
-					jobStatus := latestJob.Status
-					// If there's a running job, stream the logs directly from the droplet
+					// Determine the job id
+					jobID := c.Int64("job")
+					var targetJob *state.Job
+					// Get logs from the latest job if specific ID was not provided
+					if jobID == 0 {
+						targetJob = existingState.GetLatestJob()
+						jobID = targetJob.ID
+					} else {
+						targetJob = existingState.GetJob(jobID)
+					}
+					// If the target job is running, stream logs
+					jobStatus := targetJob.Status
 					if jobStatus == state.Provisioning || jobStatus == state.Running {
-						err = ssh.StreamLogs()
+						err = ssh.StreamLogs(jobID)
 						if err != nil {
 							return err
 						}
-						return nil
-					} else if c.Int("job") != 0 {
-						jobID := c.Int("job")
+					} else { // Otherwise pull from bucket
 						err := GetLogsFromBucket(config, jobID)
-						return err
-					} else {
-						err := GetLogsFromBucket(config, jobID)
-						return err
+						if err != nil {
+							return err
+						}
 					}
+					return nil
 				},
 			},
 
@@ -278,7 +284,7 @@ func main() {
 					jobStatus := targetJob.Status
 					// Attach to the running job with tmux
 					if jobStatus == state.Running {
-						err = ssh.AttachToTmuxSession()
+						err = ssh.AttachToTmuxSession(targetJob.ID)
 						if err != nil {
 							return err
 						}

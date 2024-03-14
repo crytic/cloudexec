@@ -10,7 +10,7 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
-func GetLogsFromBucket(config config.Config, jobID int) error {
+func GetLogsFromBucket(config config.Config, jobID int64) error {
 	itemKey := fmt.Sprintf("job-%d/logs/cloud-init-output.log", jobID)
 
 	log, err := s3.GetObject(config, itemKey)

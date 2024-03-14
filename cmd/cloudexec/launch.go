@@ -145,7 +145,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	}
 
 	fmt.Printf("Creating new %s droplet in %s for job %d...\n", dropletSize, config.DigitalOcean.SpacesRegion, thisJobId)
-	droplet, err := do.CreateDroplet(config, username, config.DigitalOcean.SpacesRegion, dropletSize, userData, thisJobId, publicKey)
+	droplet, err := do.CreateDroplet(config, config.DigitalOcean.SpacesRegion, dropletSize, userData, thisJobId, publicKey)
 	if err != nil {
 		return fmt.Errorf("Failed to create droplet: %w", err)
 	}
@@ -176,7 +176,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 
 	// Ensure we can SSH into the droplet
 	fmt.Println("Ensuring we can SSH into the droplet...")
-	err = ssh.WaitForSSHConnection()
+	err = ssh.WaitForSSHConnection(thisJobId)
 	if err != nil {
 		return fmt.Errorf("Failed to SSH into the droplet: %w", err)
 	}
