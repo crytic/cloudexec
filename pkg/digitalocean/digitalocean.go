@@ -38,7 +38,7 @@ type Snapshot struct {
  * exports the following functions:
  * - CheckAuth(config config.Config) (string, error)
  * - CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error)
- * - GetAllDroplets(config config.Config, dropletName string) ([]Droplet, error)
+ * - GetAllDroplets(config config.Config) ([]Droplet, error)
  * - DeleteDroplet(config config.Config, dropletID int64) error
  * - GetLatestSnapshot(config config.Config) (Snapshot, error)
  */
@@ -77,6 +77,7 @@ func createSSHKeyOnDigitalOcean(keyName string, publicKey string) (string, error
 	return key.Fingerprint, nil
 }
 
+// Query DigitalOcean to see if a key with the given name exists, return it's fingerprint if so
 func findSSHKeyOnDigitalOcean(keyName string) (string, error) {
 	opt := &godo.ListOptions{
 		Page:    1,
@@ -100,6 +101,7 @@ func findSSHKeyOnDigitalOcean(keyName string) (string, error) {
 ////////////////////////////////////////
 // Exported Functions
 
+// Query the droplet and spaces APIs to check whether the config contains valid credentials
 func CheckAuth(config config.Config) (string, error) {
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
@@ -126,6 +128,7 @@ func CheckAuth(config config.Config) (string, error) {
 	return fmt.Sprintf("%s\n%s", doResp, bucketResp), nil
 }
 
+// Launch a new droplet
 func CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error) {
 	var droplet Droplet
 	// create a client

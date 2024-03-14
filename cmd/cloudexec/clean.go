@@ -11,17 +11,19 @@ import (
 )
 
 func ConfirmCancelAll(config config.Config, existingState *state.State) error {
-	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	droplets, err := do.GetAllDroplets(config)
 	if err != nil {
-		return fmt.Errorf("Failed to get droplets by name: %w", err)
+		return fmt.Errorf("Failed to get all running servers: %w", err)
 	}
 	if len(droplets) == 0 {
-		fmt.Printf("Zero %s droplets found\n", bucketName)
+		fmt.Printf("Zero servers found\n")
 		return nil
 	}
-	fmt.Printf("Existing %s droplet(s) found:\n", bucketName)
+	fmt.Printf("Found %v running server(s):\n", len(droplets))
 	for _, job := range existingState.Jobs {
+		if job.Status != state.Provisioning && job.Status != state.Running {
+			continue // skip jobs that aren't running
+		}
 		err = CancelJob(&job, existingState, config)
 		if err != nil {
 			fmt.Printf("Failed to cancel job %v", job.ID)
@@ -31,19 +33,18 @@ func ConfirmCancelAll(config config.Config, existingState *state.State) error {
 }
 
 func ResetBucket(config config.Config) error {
-	bucketName := fmt.Sprintf("cloudexec-%s", config.Username)
 	objects, err := s3.ListObjects(config, "")
 	if err != nil {
-		return fmt.Errorf("Failed to list objects in bucket '%s': %w", bucketName, err)
+		return fmt.Errorf("Failed to list objects in bucket: %w", err)
 	}
 
 	// Confirm bucket deletion
 	var numToRm int = len(objects)
 	if numToRm == 0 {
-		fmt.Printf("Bucket '%s' is already empty.\n", bucketName)
+		fmt.Printf("Bucket is already empty.\n")
 		return nil
 	} else {
-		fmt.Printf("Removing the first %d items from bucket %s...\n", numToRm, bucketName)
+		fmt.Printf("Removing the first %d items from bucket...\n", numToRm)
 		fmt.Println("Confirm? (y/n)")
 		var response string
 		fmt.Scanln(&response)
@@ -57,7 +58,7 @@ func ResetBucket(config config.Config) error {
 					return err
 				}
 			}
-			fmt.Printf("Deleted %d objects in bucket '%s'...\n", numToRm, bucketName)
+			fmt.Printf("Deleted %d objects from bucket...\n", numToRm)
 		}
 	}
 	return nil
