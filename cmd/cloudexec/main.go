@@ -130,7 +130,6 @@ func main() {
 					if err != nil {
 						return err
 					}
-					fmt.Printf("Launching a %s droplet in the %s region\n", dropletSize, dropletRegion)
 					err = Launch(config, dropletSize, dropletRegion, lc)
 					if err != nil {
 						log.Fatal(err)

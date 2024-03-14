@@ -88,7 +88,6 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	bucketName := fmt.Sprintf("cloudexec-%s", username)
 
 	// get existing state from bucket
-	fmt.Printf("Getting existing state from bucket %s...\n", bucketName)
 	existingState, err := state.GetState(config)
 	if err != nil {
 		return fmt.Errorf("Failed to get S3 state: %w", err)
@@ -115,7 +114,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	}
 	newState.CreateJob(newJob)
 	// sync state to bucket
-	fmt.Printf("Updating state in bucket %s...\n", bucketName)
+	fmt.Printf("Adding new job to the state...\n")
 	err = state.UpdateState(config, newState)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)

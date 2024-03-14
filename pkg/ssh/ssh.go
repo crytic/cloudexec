@@ -112,8 +112,11 @@ func GetOrCreateSSHKeyPair() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("Failed to read SSH public key file: %w", err)
 		}
+		fmt.Printf("Using existing ssh keypair at %s(.pub)\n", privateKeyPath)
 		return string(publicKeyBytes), nil
 	}
+
+	fmt.Printf("Creating new ssh keypair at %s(.pub)\n", privateKeyPath)
 
 	// Generate an ed25519 key pair
 	edPubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)

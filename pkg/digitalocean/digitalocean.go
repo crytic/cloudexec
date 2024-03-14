@@ -68,34 +68,30 @@ func createSSHKeyOnDigitalOcean(keyName string, publicKey string) (string, error
 		Name:      keyName,
 		PublicKey: publicKey,
 	}
-
 	key, _, err := doClient.Keys.Create(ctx, createKeyRequest)
 	if err != nil {
 		return "", fmt.Errorf("Failed to create SSH key on DigitalOcean: %w", err)
 	}
-
 	return key.Fingerprint, nil
 }
 
 // Query DigitalOcean to see if a key with the given name exists, return it's fingerprint if so
-func findSSHKeyOnDigitalOcean(keyName string) (string, error) {
+func findSSHKeyOnDigitalOcean(keyName string) (string, string, error) {
 	opt := &godo.ListOptions{
 		Page:    1,
 		PerPage: 200, // Maximum allowed by DigitalOcean
 	}
-
 	keys, _, err := doClient.Keys.List(context.Background(), opt)
 	if err != nil {
-		return "", fmt.Errorf("Failed to list DigitalOcean SSH keys: %w", err)
+		return "", "", fmt.Errorf("Failed to list DigitalOcean SSH keys: %w", err)
 	}
-
 	for _, key := range keys {
 		if key.Name == keyName {
-			return key.Fingerprint, nil
+			fmt.Printf("SSH key found. ID=%v | Name=%s | Fingerprint=%v\n", key.ID, key.Name, key.Fingerprint)
+			return key.Fingerprint, key.PublicKey, nil
 		}
 	}
-
-	return "", fmt.Errorf("SSH key with name '%s' not found", keyName)
+	return "", "", fmt.Errorf("SSH key with name '%s' not found", keyName)
 }
 
 ////////////////////////////////////////
@@ -108,10 +104,10 @@ func CheckAuth(config config.Config) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	greenCheck := "\u2705"
 	noEntry := "\U0001F6AB"
 
+	// Check Account authentication
 	_, _, err = doClient.Account.Get(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("%s Failed to authenticate with DigitalOcean API: %w", noEntry, err)
@@ -124,7 +120,6 @@ func CheckAuth(config config.Config) (string, error) {
 		return "", fmt.Errorf("%s Failed to authenticate with DigitalOcean Spaces API: %w", noEntry, err)
 	}
 	bucketResp := fmt.Sprintf("%s Successfully authenticated with DigitalOcean Spaces API", greenCheck)
-
 	return fmt.Sprintf("%s\n%s", doResp, bucketResp), nil
 }
 
@@ -139,9 +134,11 @@ func CreateDroplet(config config.Config, region string, size string, userData st
 
 	dropletName := fmt.Sprintf("cloudexec-%v", config.Username)
 
-	sshKeyFingerprint, err := findSSHKeyOnDigitalOcean(dropletName)
+	sshKeyFingerprint, savedPublicKey, err := findSSHKeyOnDigitalOcean(dropletName)
 	if err == nil {
-		fmt.Printf("SSH key %v found on DigitalOcean with fingerprint: %v\n", dropletName, sshKeyFingerprint)
+		if publicKey != savedPublicKey {
+			return droplet, fmt.Errorf("Keys do not match! Consider removing your old key from DigitalOcean Security settings and re-running 'cloudexec launch'.")
+		}
 	} else {
 		// Create the SSH key on DigitalOcean
 		fmt.Println("Creating SSH key on DigitalOcean...")
