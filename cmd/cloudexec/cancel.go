@@ -10,11 +10,10 @@ import (
 	"github.com/crytic/cloudexec/pkg/state"
 )
 
-func CancelJob(job *state.Job, existingState *state.State, config config.Config) error {
+func ConfirmCancelJob(job *state.Job, existingState *state.State, config config.Config) error {
 	if job.Status != state.Provisioning && job.Status != state.Running {
 		return fmt.Errorf("Job %v is not running, it is %s", job.ID, job.Status)
 	}
-
 	fmt.Printf("Droplet %s associated with job %v: IP=%v | CreatedAt=%s\n", job.Droplet.Name, job.ID, job.Droplet.IP, job.Droplet.Created)
 	fmt.Println("Destroy this droplet? (y/n)")
 	var response string
@@ -38,6 +37,28 @@ func CancelJob(job *state.Job, existingState *state.State, config config.Config)
 		fmt.Println("Done")
 	} else {
 		fmt.Printf("Job %v was not cancelled\n", job.ID)
+	}
+	return nil
+}
+
+func ConfirmCancelAll(config config.Config, existingState *state.State) error {
+	droplets, err := do.GetAllDroplets(config)
+	if err != nil {
+		return fmt.Errorf("Failed to get all running servers: %w", err)
+	}
+	if len(droplets) == 0 {
+		fmt.Println("No running servers found")
+		return nil
+	}
+	fmt.Printf("Found %v running server(s):\n", len(droplets))
+	for _, job := range existingState.Jobs {
+		if job.Status != state.Provisioning && job.Status != state.Running {
+			continue // skip jobs that aren't running
+		}
+		err = ConfirmCancelJob(&job, existingState, config)
+		if err != nil {
+			fmt.Printf("Failed to cancel job %v", job.ID)
+		}
 	}
 	return nil
 }

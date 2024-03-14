@@ -325,7 +325,7 @@ func main() {
 					} else {
 						targetJob = existingState.GetJob(jobID)
 					}
-					err = CancelJob(targetJob, existingState, config)
+					err = ConfirmCancelJob(targetJob, existingState, config)
 					if err != nil {
 						return err
 					}
@@ -336,7 +336,14 @@ func main() {
 			{
 				Name:  "clean",
 				Usage: "Cleans up any running cloudexec droplets and clears the spaces bucket",
-				Action: func(*cli.Context) error {
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "job",
+						Value: 0,
+						Usage: "Optional job ID to get logs from",
+					},
+				},
+				Action: func(c *cli.Context) error {
 					if configErr != nil {
 						return configErr // Abort on configuration error
 					}
@@ -348,14 +355,21 @@ func main() {
 					if err != nil {
 						return err
 					}
-					err = ConfirmCancelAll(config, existingState)
-					if err != nil {
-						return err
-					}
-					// clean existing files from the bucket
-					err = ResetBucket(config)
-					if err != nil {
-						return err
+					jobID := c.Int64("job")
+					// var targetJob *state.Job
+					if jobID == 0 { // If no job provided, clean everything
+						err = ConfirmCancelAll(config, existingState)
+						if err != nil {
+							return err
+						}
+						// clean existing files from the bucket
+						err = CleanBucketAll(config)
+						if err != nil {
+							return err
+						}
+						// } else {
+						// 	targetJob = existingState.GetJob(jobID)
+						// TODO
 					}
 					return nil
 				},
