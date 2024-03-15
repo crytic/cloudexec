@@ -15,7 +15,7 @@ func CancelJob(config config.Config, existingState *state.State, job *state.Job,
 		log.Info("Job %v is not running, it is %s", job.ID, job.Status)
     return nil
 	}
-	log.Info("Destroying droplet %s associated with job %v: IP=%v | CreatedAt=%s", job.Droplet.Name, job.ID, job.Droplet.IP, job.Droplet.Created)
+	log.Warn("Destroying droplet %s associated with job %v: IP=%v | CreatedAt=%s", job.Droplet.Name, job.ID, job.Droplet.IP, job.Droplet.Created)
 	if !force { // Ask for confirmation before cleaning this job if no force flag
 		log.Warn("Confirm? (y/n)")
 		var response string
@@ -29,12 +29,12 @@ func CancelJob(config config.Config, existingState *state.State, job *state.Job,
 	if err != nil {
 		return fmt.Errorf("Failed to destroy droplet: %w", err)
 	}
-	log.Good("Droplet %v destroyed", job.Droplet.ID)
+	log.Good("Droplet %v destroyed", job.Droplet.Name)
 	err = existingState.CancelRunningJob(config, job.ID)
 	if err != nil {
 		return fmt.Errorf("Failed to change job status to cancelled: %w", err)
 	}
-	log.Good("Job %v status changed to cancelled", job.Droplet.ID)
+	log.Good("Job %v status changed to cancelled", job.ID)
 	return nil
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/crytic/cloudexec/pkg/config"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
-	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
@@ -145,7 +144,6 @@ func (s *State) CancelRunningJob(config config.Config, jobID int64) error {
 	for i, job := range s.Jobs {
 		if job.ID == jobID {
 			if job.Status == Running || job.Status == Provisioning {
-				log.Info("Setting status of job %d to 'Cancelled'", job.ID)
 				s.Jobs[i].Status = Cancelled
 				break
 			} else {

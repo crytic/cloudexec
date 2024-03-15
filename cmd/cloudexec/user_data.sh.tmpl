@@ -265,6 +265,7 @@ end_time=$(("${start_time}" + TIMEOUT))
 pretty_end_time="$(fmtDate "${end_time}")"
 echo "Workload is running, timer started at ${pretty_start_time}, we'll time out at ${pretty_end_time}"
 echo "================================================================================================"
+echo "${RUN_COMMAND}"
 echo
 
 ########################################
