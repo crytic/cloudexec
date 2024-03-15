@@ -9,7 +9,7 @@ import (
 	"github.com/crytic/cloudexec/pkg/state"
 )
 
-func ConfirmCancelJob(config config.Config, existingState *state.State, job *state.Job) error {
+func CancelJob(config config.Config, existingState *state.State, job *state.Job) error {
 	if job.Status != state.Provisioning && job.Status != state.Running {
 		return fmt.Errorf("Job %v is not running, it is %s", job.ID, job.Status)
 	}
@@ -35,7 +35,7 @@ func ConfirmCancelJob(config config.Config, existingState *state.State, job *sta
 	return nil
 }
 
-func ConfirmCancelAll(config config.Config, existingState *state.State) error {
+func CancelAll(config config.Config, existingState *state.State) error {
 	droplets, err := do.GetAllDroplets(config)
 	if err != nil {
 		return fmt.Errorf("Failed to get all running servers: %w", err)
@@ -49,7 +49,7 @@ func ConfirmCancelAll(config config.Config, existingState *state.State) error {
 		if job.Status != state.Provisioning && job.Status != state.Running {
 			continue // skip jobs that aren't running
 		}
-		err = ConfirmCancelJob(config, existingState, &job)
+		err = CancelJob(config, existingState, &job)
 		if err != nil {
 			fmt.Printf("Failed to cancel job %v", job.ID)
 		}

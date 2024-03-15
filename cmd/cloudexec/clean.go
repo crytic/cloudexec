@@ -58,6 +58,10 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 }
 
 func CleanBucketAll(config config.Config, existingState *state.State) error {
+  if len(existingState.Jobs) == 0 {
+    fmt.Println("No jobs found")
+    return nil
+  }
 	for _, job := range existingState.Jobs {
 		err := CleanBucketJob(config, existingState, job.ID)
 		if err != nil {
