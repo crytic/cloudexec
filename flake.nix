@@ -10,6 +10,12 @@
     utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
+        pyCommon = {
+          format = "pyproject";
+          nativeBuildInputs = with pkgs.python310Packages; [ pythonRelaxDepsHook ];
+          pythonRelaxDeps = true;
+          doCheck = false;
+        };
       in
       rec {
 
@@ -58,6 +64,52 @@
             ];
           };
 
+          solc-select = pkgs.python310Packages.buildPythonPackage (pyCommon // {
+            pname = "solc-select";
+            version = "1.0.4";
+            src = builtins.fetchGit {
+              url = "git+ssh://git@github.com/crytic/solc-select";
+              rev = "8072a3394bdc960c0f652fb72e928a7eae3631da";
+            };
+            propagatedBuildInputs = with pkgs.python310Packages; [
+              packaging
+              setuptools
+              pycryptodome
+            ];
+          });
+
+          crytic-compile = pkgs.python310Packages.buildPythonPackage (pyCommon // rec {
+            pname = "crytic-compile";
+            version = "0.3.5";
+            src = builtins.fetchGit {
+              url = "git+ssh://git@github.com/crytic/crytic-compile";
+              rev = "3a4b0de72ad418b60b9ef8c38d7de31ed39e3898";
+            };
+            propagatedBuildInputs = with pkgs.python310Packages; [
+              cbor2
+              packages.solc-select
+              pycryptodome
+              setuptools
+              toml
+            ];
+          });
+
+          medusa = pkgs.buildGoModule {
+            pname = "medusa";
+            version = "0.1.2"; # from cmd/root.go
+            src = builtins.fetchGit {
+              url = "git+ssh://git@github.com/trailofbits/medusa";
+              rev = "ac99e78ee38df86a8afefb21f105be9e4eae46ee";
+            };
+            vendorSha256 = "sha256-k5DtmpNi1ynSWgJ6b9EIlqCM6OlCkQf3Cf/daP+I7mY=";
+            nativeBuildInputs = [
+              packages.crytic-compile
+              pkgs.solc
+              pkgs.nodejs
+            ];
+            doCheck = false; # tests require `npm install` which can't run in hermetic build env
+          };
+
         };
 
         apps = {
@@ -91,6 +143,9 @@
               packer
               doctl
               curl
+              # manual testing
+              packages.medusa
+              packages.crytic-compile
             ];
           };
         };
