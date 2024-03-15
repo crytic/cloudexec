@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"strings"
 
 	"github.com/crytic/cloudexec/pkg/config"
@@ -13,24 +14,34 @@ import (
 )
 
 func Configure() error {
+	user, err := user.Current()
+	if err != nil {
+		fmt.Printf("Failed to get current user: %v", err)
+		os.Exit(1)
+	}
+	username, err := promptUserInput("Username", user.Username)
+	if err != nil {
+		return err
+	}
 	spacesRegion, err := promptUserInput("Digital Ocean Spaces region", "nyc3")
 	if err != nil {
 		return err
 	}
-	apiKey, err := promptSecretInput("Digital Ocean API key or reference", "op://private/DigitalOcean/api token")
+	apiKey, err := promptSecretInput("Digital Ocean API key or reference", "op://Private/DigitalOcean/ApiKey")
 	if err != nil {
 		return err
 	}
-	spacesAccessKey, err := promptSecretInput("Digital Ocean Spaces access key ID or reference", "op://private/DigitalOcean/spaces access key id")
+	spacesAccessKey, err := promptSecretInput("Digital Ocean Spaces access key ID or reference", "op://Private/DigitalOcean/SpacesKeyID")
 	if err != nil {
 		return err
 	}
-	spacesSecretKey, err := promptSecretInput("Digital Ocean Spaces secret access key or reference", "op://private/DigitalOcean/spaces secret access key")
+	spacesSecretKey, err := promptSecretInput("Digital Ocean Spaces secret access key or reference", "op://Private/DigitalOcean/SpacesSecret")
 	if err != nil {
 		return err
 	}
 
 	configValues := config.Config{
+		Username: username,
 		DigitalOcean: struct {
 			ApiKey          string `toml:"apiKey"`
 			SpacesAccessKey string `toml:"spacesAccessKey"`

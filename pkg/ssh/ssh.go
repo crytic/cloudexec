@@ -39,14 +39,25 @@ type HostConfig struct {
 	IdentityFile string
 }
 
-func EnsureSSHIncludeConfig(usr *user.User) error {
+func getSSHDir() (string, error) {
+	user, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("Failed to get current user: %w", err)
+	}
+	return filepath.Join(user.HomeDir, ".ssh"), nil
+}
+
+func EnsureSSHIncludeConfig() error {
 	commentString := "# Added by cloudexec\n"
 	includeString := "Include config.d/*\n"
-	sshDir := filepath.Join(usr.HomeDir, ".ssh")
+	sshDir, err := getSSHDir()
+	if err != nil {
+		return err
+	}
 	configPath := filepath.Join(sshDir, "config")
 
 	// Create the SSH directory if it does not exist
-	err := os.MkdirAll(sshDir, 0700)
+	err = os.MkdirAll(sshDir, 0700)
 	if err != nil {
 		return fmt.Errorf("Failed to create SSH directory: %w", err)
 	}
@@ -85,13 +96,16 @@ func EnsureSSHIncludeConfig(usr *user.User) error {
 	return nil
 }
 
-func AddSSHConfig(usr *user.User, ipAddress string) error {
-	err := EnsureSSHIncludeConfig(usr)
+func AddSSHConfig(ipAddress string) error {
+	err := EnsureSSHIncludeConfig()
 	if err != nil {
 		return fmt.Errorf("Failed to validate main SSH config: %w", err)
 	}
+	sshDir, err := getSSHDir()
+	if err != nil {
+		return err
+	}
 
-	sshDir := filepath.Join(usr.HomeDir, ".ssh")
 	configDir := filepath.Join(sshDir, "config.d")
 	// fileIpAddress := strings.Replace(ipAddress, ".", "-", -1)
 	// configName := fmt.Sprintf("cloudexec-%v", fileIpAddress)
@@ -131,13 +145,16 @@ func AddSSHConfig(usr *user.User, ipAddress string) error {
 	return nil
 }
 
-func DeleteSSHConfig(usr *user.User, filename string) error {
-	err := EnsureSSHIncludeConfig(usr)
+func DeleteSSHConfig(filename string) error {
+	err := EnsureSSHIncludeConfig()
 	if err != nil {
 		return fmt.Errorf("Failed to validate SSH config: %w", err)
 	}
+	sshDir, err := getSSHDir()
+	if err != nil {
+		return err
+	}
 
-	sshDir := filepath.Join(usr.HomeDir, ".ssh")
 	configDir := filepath.Join(sshDir, "config.d")
 	configPath := filepath.Join(configDir, filename)
 	err = os.Remove(configPath)
@@ -151,13 +168,16 @@ func DeleteSSHConfig(usr *user.User, filename string) error {
 	return nil
 }
 
-func GetOrCreateSSHKeyPair(usr *user.User) (string, error) {
-	err := EnsureSSHIncludeConfig(usr)
+func GetOrCreateSSHKeyPair() (string, error) {
+	err := EnsureSSHIncludeConfig()
 	if err != nil {
 		return "", fmt.Errorf("Failed to validate SSH config: %w", err)
 	}
+	sshDir, err := getSSHDir()
+	if err != nil {
+		return "", err
+	}
 
-	sshDir := filepath.Join(usr.HomeDir, ".ssh")
 	privateKeyPath := filepath.Join(sshDir, "cloudexec-key")
 	publicKeyPath := filepath.Join(sshDir, "cloudexec-key.pub")
 
@@ -204,7 +224,15 @@ func GetOrCreateSSHKeyPair(usr *user.User) (string, error) {
 	return string(publicKeySSHFormat), nil
 }
 
-func WaitForSSHConnection(sshConfigPath string) error {
+func WaitForSSHConnection() error {
+	sshDir, err := getSSHDir()
+	if err != nil {
+		return err
+	}
+	sshConfigName := "cloudexec"
+	sshConfigName = strings.ReplaceAll(sshConfigName, ".", "-")
+	sshConfigPath := filepath.Join(sshDir, "config.d", sshConfigName)
+
 	timeout := 60 * time.Second
 	retryInterval := 10 * time.Second
 

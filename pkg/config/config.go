@@ -9,6 +9,7 @@ import (
 )
 
 type Config struct {
+	Username     string `toml:"username"`
 	DigitalOcean struct {
 		ApiKey          string `toml:"apiKey"`
 		SpacesAccessKey string `toml:"spacesAccessKey"`
