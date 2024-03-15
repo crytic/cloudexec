@@ -5,7 +5,7 @@
     "timeout": 0,
     "testLimit": 50000,
     "callSequenceLength": 100,
-    "corpusDirectory": "/root/output",
+    "corpusDirectory": "output",
     "coverageEnabled": true,
     "deploymentOrder": [],
     "constructorArgs": {},
@@ -21,7 +21,7 @@
       "testAllContracts": false,
       "traceAll": false,
       "assertionTesting": {
-        "enabled": false,
+        "enabled": true,
         "testViewMethods": false
       },
       "propertyTesting": {
