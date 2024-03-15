@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
@@ -49,7 +50,7 @@ func DownloadJobOutput(config config.Config, jobID int64, localPath string) erro
 					return fmt.Errorf("Failed to write object content to file: %w", err)
 				}
 
-				fmt.Printf("Downloaded %s to %s \n", objectKey, localFilePath)
+				log.Good("Downloaded %s to %s", objectKey, localFilePath)
 			}
 		}
 		return nil
@@ -59,12 +60,12 @@ func DownloadJobOutput(config config.Config, jobID int64, localPath string) erro
 	body, logErr := s3.GetObject(config, fmt.Sprintf("job-%v/cloudexec.log", jobID))
 
 	if len(objectKeys) == 0 && logErr != nil {
-		fmt.Printf("No output or logs are available for job %v\n", jobID)
+		log.Info("No output or logs are available for job %v", jobID)
 		return nil
 	} else if len(objectKeys) == 0 {
-		fmt.Printf("No output is available for job %v\n", jobID)
+		log.Info("No output is available for job %v", jobID)
 	} else if logErr != nil {
-		fmt.Printf("No logs are available for job %v\n", jobID)
+		log.Info("No logs are available for job %v", jobID)
 	}
 
 	// Check if the local path is a directory, if not, create it
@@ -90,7 +91,7 @@ func DownloadJobOutput(config config.Config, jobID int64, localPath string) erro
 		if err != nil {
 			return fmt.Errorf("Failed to write object content to file: %w", err)
 		}
-		fmt.Printf("Downloaded job %v logs to %s \n", jobID, localFilePath)
+		log.Good("Downloaded job %v logs to %s", jobID, localFilePath)
 	}
 
 	return nil

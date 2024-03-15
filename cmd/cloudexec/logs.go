@@ -11,12 +11,12 @@ import (
 )
 
 func GetLogsFromBucket(config config.Config, jobID int64) error {
-	itemKey := fmt.Sprintf("job-%d/logs/cloud-init-output.log", jobID)
+	itemKey := fmt.Sprintf("job-%d/cloudexec.log", jobID)
 
 	log, err := s3.GetObject(config, itemKey)
 	if err != nil {
 		if err.Error() == "The specified key does not exist." {
-			return fmt.Errorf("The specified job logs do not exist. Please check the job ID and try again.\n")
+			return fmt.Errorf("The specified job logs do not exist. Please check the job ID and try again.")
 		}
 		return fmt.Errorf("Failed to read log data: %w", err)
 	}

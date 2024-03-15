@@ -27,15 +27,15 @@ stderr_log="/tmp/cloudexec-stderr.log"
 # Required setup
 
 # Wait for unattended-upgr to finish install/upgrading stuff in the background
+echo "Waiting for unattended-upgr to finish..."
 while fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
-	echo "Waiting for unattended-upgr to finish..."
-	sleep 3
+	sleep 1
 done
 
 echo "Installing prereqs..."
 export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip
+apt-get update > /dev/null
+apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip > /dev/null
 
 # set hostname
 current_hostname="$(hostname)"
@@ -76,6 +76,16 @@ for tag in ${TAGS}; do
 	fi
 done
 
+if [[ ${CLOUDEXEC} == false ]] || [[ ${USERNAME} == "" ]]; then
+	echo "Not a CloudExec droplet, exiting..."
+	# exit 1
+fi
+
+if [[ ${JOB_ID} == "" ]]; then
+	echo "No job ID, exiting..."
+	exit 1
+fi
+
 export BUCKET_NAME="cloudexec-${USERNAME}"
 echo "Using bucket ${BUCKET_NAME}"
 
@@ -97,16 +107,6 @@ for var in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION; do
 	fi
 done
 
-if [[ ${CLOUDEXEC} == false ]] || [[ ${USERNAME} == "" ]]; then
-	echo "Not a CloudExec droplet, exiting..."
-	# exit 1
-fi
-
-if [[ ${JOB_ID} == "" ]]; then
-	echo "No job ID, exiting..."
-	exit 1
-fi
-
 ########################################
 # Define helper functions
 
@@ -122,15 +122,12 @@ s3cmd() {
 }
 
 upload_output() {
-
 	if compgen -G "${output_dir}/*" >/dev/null; then
 		echo "Uploading results..."
 		s3cmd put -r "${output_dir}"/* "s3://${BUCKET_NAME}/job-${JOB_ID}/output/"
-
 	else
 		echo "Skipping results upload, no files found in ${output_dir}"
 	fi
-
 }
 
 # Define a cleanup function that will be executed on signals or exit
@@ -208,6 +205,7 @@ trap cleanup EXIT SIGHUP SIGINT SIGTERM
 ########################################
 # Job-specific setup
 
+echo "================================================================================================"
 echo "Running setup..."
 eval "${SETUP_COMMANDS}"
 
@@ -265,6 +263,7 @@ end_time=$(("${start_time}" + TIMEOUT))
 pretty_end_time="$(fmtDate "${end_time}")"
 echo "Workload is running, timer started at ${pretty_start_time}, we'll time out at ${pretty_end_time}"
 echo "================================================================================================"
+echo "${RUN_COMMAND}"
 echo
 
 ########################################

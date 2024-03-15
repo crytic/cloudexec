@@ -14,15 +14,15 @@ contract Test {
       flag1 = false;
   }
 
-  function echidna_alwaystrue() public returns (bool){
+  function fuzz_alwaystrue() public returns (bool){
     return(true);
   }
 
-  function echidna_revert_always() public returns (bool){
+  function fuzz_revert_always() public returns (bool){
     revert();
   }
 
-  function echidna_sometimesfalse() public returns (bool){
+  function fuzz_sometimesfalse() public returns (bool){
     emit Flag(flag0);
     emit Flag(flag1);
     return(flag1);

@@ -9,6 +9,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/crytic/cloudexec/pkg/config"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
 )
@@ -43,7 +44,7 @@ func InitLaunchConfig() error {
 
 	// Write the default launch config to the file
 	_, err = launchConfigFile.WriteString(`
-# Set the directory to upload to the droplet.
+# Set the directory to upload to the server.
 [input]
 directory = ""
 timeout = "48h"
@@ -83,11 +84,8 @@ func LoadLaunchConfig(launchConfigPath string) (LaunchConfig, error) {
 	return lc, nil
 }
 
-func Launch(config config.Config, dropletSize string, dropletRegion string, lc LaunchConfig) error {
-	username := config.Username
-	bucketName := fmt.Sprintf("cloudexec-%s", username)
-
-	// get existing state from bucket
+func Launch(config config.Config, serverSize string, serverRegion string, lc LaunchConfig) error {
+	// get existing state
 	existingState, err := state.GetState(config)
 	if err != nil {
 		return fmt.Errorf("Failed to get S3 state: %w", err)
@@ -100,7 +98,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	} else {
 		latestJobId = latestJob.ID
 	}
-	thisJobId := latestJobId + 1
+	jobID := latestJobId + 1
 
 	// update state struct with a new job
 	newState := &state.State{}
@@ -108,82 +106,77 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 
 	newJob := state.Job{
 		Name:      lc.Input.JobName,
-		ID:        thisJobId,
+		ID:        jobID,
 		Status:    state.Provisioning,
 		StartedAt: startedAt,
 	}
 	newState.CreateJob(newJob)
 	// sync state to bucket
-	fmt.Printf("Adding new job to the state...\n")
 	err = state.MergeAndSave(config, newState)
+	log.Info("Registered new job with id %v", jobID)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}
 
 	// upload local files to the bucket
 	sourcePath := lc.Input.Directory // TODO: verify that this path exists & throw informative error if not
-	destPath := fmt.Sprintf("job-%v", thisJobId)
-	fmt.Printf("Compressing and uploading contents of directory %s to bucket %s/%s...\n", sourcePath, bucketName, destPath)
+	destPath := fmt.Sprintf("job-%v", jobID)
 	err = UploadDirectoryToSpaces(config, sourcePath, destPath)
 	if err != nil {
 		return fmt.Errorf("Failed to upload files: %w", err)
 	}
 
 	// Get or create an SSH key
-	fmt.Println("Getting or creating SSH key pair...")
 	publicKey, err := ssh.GetOrCreateSSHKeyPair()
 	if err != nil {
 		return fmt.Errorf("Failed to get or creating SSH key pair: %w", err)
 	}
 
 	// Prepare user data
-	fmt.Println("Generating user data...")
 	userData, err := GenerateUserData(config, lc)
 	if err != nil {
 		return fmt.Errorf("Failed to generate user data: %w", err)
 	}
 
-	fmt.Printf("Creating new %s droplet in %s for job %d...\n", dropletSize, config.DigitalOcean.SpacesRegion, thisJobId)
-	droplet, err := do.CreateDroplet(config, config.DigitalOcean.SpacesRegion, dropletSize, userData, thisJobId, publicKey)
+	log.Wait("Creating new %s server in %s for job %d", serverSize, config.DigitalOcean.SpacesRegion, jobID)
+	server, err := do.CreateDroplet(config, config.DigitalOcean.SpacesRegion, serverSize, userData, jobID, publicKey)
 	if err != nil {
-		return fmt.Errorf("Failed to create droplet: %w", err)
+		return fmt.Errorf("Failed to create server: %w", err)
 	}
+	log.Good("Server created with IP: %v", server.IP)
 
-	fmt.Printf("Droplet created with IP: %v\n", droplet.IP)
-
-	// Add the droplet info to state
-	fmt.Println("Adding new droplet info to state...")
+	// Add the server info to state
 	updatedAt := time.Now().Unix()
 	for i, job := range newState.Jobs {
-		if job.ID == thisJobId {
-			newState.Jobs[i].Droplet = droplet
+		if job.ID == jobID {
+			newState.Jobs[i].Droplet = server
 			newState.Jobs[i].UpdatedAt = updatedAt
 		}
 	}
-	fmt.Printf("Uploading new state to %s\n", bucketName)
 	err = state.MergeAndSave(config, newState)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}
+	log.Info("Saved new server info to state")
 
-	// Add the droplet to the SSH config file
-	fmt.Println("Adding droplet to SSH config file...")
-	err = ssh.AddSSHConfig(thisJobId, droplet.IP)
+	// Add the server to the SSH config file
+	err = ssh.AddSSHConfig(jobID, server.IP)
 	if err != nil {
-		return fmt.Errorf("Failed to add droplet to SSH config file: %w", err)
+		return fmt.Errorf("Failed to add server to SSH config file: %w", err)
 	}
+	log.Info("Added cloudexec-%v to SSH config", jobID)
 
-	// Ensure we can SSH into the droplet
-	fmt.Println("Ensuring we can SSH into the droplet...")
-	err = ssh.WaitForSSHConnection(thisJobId)
+	// Ensure we can SSH into the server
+	log.Wait("Waiting for our new server to wake up")
+	err = ssh.WaitForSSHConnection(jobID)
 	if err != nil {
-		return fmt.Errorf("Failed to SSH into the droplet: %w", err)
+		return fmt.Errorf("Failed to SSH into the server: %w", err)
 	}
-	fmt.Println("SSH connection established!")
-	fmt.Println("Launch complete")
-	fmt.Println("You can now attach to the running job with: cloudexec attach")
-	fmt.Println("Stream logs from the droplet with: cloudexec logs")
-	fmt.Println("SSH to your droplet with: ssh cloudexec")
+	log.Good("Good Morning!")
+	fmt.Println()
+	log.Info("Stream logs from the server with: cloudexec logs")
+	log.Info("SSH to your server with: ssh cloudexec-%v", jobID)
+	log.Info("Once setup is complete, you can attach to the running job with: cloudexec attach")
 
 	return nil
 }

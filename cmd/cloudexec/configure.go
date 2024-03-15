@@ -9,15 +9,16 @@ import (
 	"os/user"
 	"strings"
 
-	"github.com/crytic/cloudexec/pkg/config"
 	"golang.org/x/term"
+
+	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/log"
 )
 
 func Configure() error {
 	user, err := user.Current()
 	if err != nil {
-		fmt.Printf("Failed to get current user: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("Failed to get current user: %v", err)
 	}
 	username, err := promptUserInput("Username", user.Username)
 	if err != nil {
@@ -63,7 +64,7 @@ func Configure() error {
 }
 
 func promptSecretInput(prompt, defaultValue string) (string, error) {
-	fmt.Printf("%s [%s]: ", prompt, defaultValue)
+	log.Info("%s [%s]: ", prompt, defaultValue)
 	rawInput, err := term.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
 		return "", fmt.Errorf("Failed to read input: %w", err)
@@ -81,7 +82,7 @@ func promptSecretInput(prompt, defaultValue string) (string, error) {
 
 func promptUserInput(prompt, defaultValue string) (string, error) {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("%s [%s]: ", prompt, defaultValue)
+	log.Info("%s [%s]: ", prompt, defaultValue)
 
 	input, err := reader.ReadString('\n')
 	if err != nil {

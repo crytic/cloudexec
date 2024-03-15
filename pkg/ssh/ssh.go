@@ -17,6 +17,8 @@ import (
 	"github.com/kevinburke/ssh_config"
 	"github.com/mikesmitty/edkey"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/crytic/cloudexec/pkg/log"
 )
 
 const HostConfigTemplate = `
@@ -112,11 +114,9 @@ func GetOrCreateSSHKeyPair() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("Failed to read SSH public key file: %w", err)
 		}
-		fmt.Printf("Using existing ssh keypair at %s(.pub)\n", privateKeyPath)
 		return string(publicKeyBytes), nil
 	}
-
-	fmt.Printf("Creating new ssh keypair at %s(.pub)\n", privateKeyPath)
+	log.Wait("Creating new ssh keypair")
 
 	// Generate an ed25519 key pair
 	edPubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
@@ -148,6 +148,7 @@ func GetOrCreateSSHKeyPair() (string, error) {
 		return "", fmt.Errorf("Failed to save SSH public key file: %w", err)
 	}
 
+	log.Good("Created new ssh keypair at %s(.pub)", privateKeyPath)
 	return string(publicKeySSHFormat), nil
 }
 
@@ -211,7 +212,7 @@ func DeleteSSHConfig(jobID int64) error {
 	}
 	// If there's no error, the file was deleted successfully
 	if err == nil {
-		fmt.Printf("Deleted SSH config for job-%v\n", jobID)
+		log.Good("Deleted SSH config for cloudexec-%v", jobID)
 	}
 	return nil
 }
@@ -278,7 +279,6 @@ func WaitForSSHConnection(jobID int64) error {
 			return fmt.Errorf("Timed out waiting for SSH connection: %w", err)
 		}
 
-		fmt.Printf("Can't connect to %s yet, retrying in %v...\n", hostname, retryInterval)
 		time.Sleep(retryInterval)
 	}
 }
