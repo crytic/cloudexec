@@ -40,7 +40,8 @@ type HostConfig struct {
 }
 
 func EnsureSSHIncludeConfig(usr *user.User) error {
-	includeString := "# Added by cloudexec\nInclude config.d/*\n\n"
+	commentString := "# Added by cloudexec\n"
+	includeString := "Include config.d/*\n"
 	sshDir := filepath.Join(usr.HomeDir, ".ssh")
 	configPath := filepath.Join(sshDir, "config")
 
@@ -54,8 +55,8 @@ func EnsureSSHIncludeConfig(usr *user.User) error {
 
 	// Check if the config file exists
 	if _, err = os.Stat(configPath); os.IsNotExist(err) {
-		// If the config file does not exist, create it with the "Include config.d/*" line
-		configFileContent = includeString
+		// If the config file does not exist, create it with the includeString line
+		configFileContent = commentString + includeString
 	} else {
 		// If the config file exists, read its content
 		content, err := os.ReadFile(configPath)
@@ -65,10 +66,10 @@ func EnsureSSHIncludeConfig(usr *user.User) error {
 
 		configFileContent = string(content)
 
-		// Check if the "Include config.d/*" line is present
-		if !strings.Contains(configFileContent, "Include config.d/*") {
+		// Check if the includeString line is present
+		if !strings.Contains(configFileContent, includeString) {
 			// If not present, add the line to the top of the file
-			configFileContent = includeString + configFileContent
+			configFileContent = commentString + includeString + configFileContent
 		} else {
 			// If the line is already present, no further action is required
 			return nil

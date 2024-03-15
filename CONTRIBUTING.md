@@ -21,19 +21,16 @@ On MacOS you can install trunk with `brew install trunk-io`. If you're using nix
 
 To lint all files that you've modified since the last commit, run `trunk check`. To fix any linter issues trunk can autoformat, run `trunk fmt`. To lint or format all files in the repo, specify -a like `trunk check -a`.
 
-To rescan the repo for any new linters that should be configured, like when adding a new language, run `trunk upgrade`. This will also update linters to their latest version.
-
 ### Overview
 
 When introducing changes to the project, note the following requirements:
 
 - All changes to the main branch should be introduced via pull requests.
-- All branches created for pull requests should follow the `dev/*` naming convention, e.g. `dev/coverage-reports`.
 - Every pull request **must** be reviewed by at least one other peer prior to being merged into the main branch.
 - Code **must** be supported on Linux, macOS, and Windows.
 - Code **must** be sufficiently commented:
   - Every type, function, const, and other variables should be accompanied by [doc comments](https://tip.golang.org/doc/comment).
-  - Inline comments should be provided for every block of code. These should explain what the block of code is aiming to achieve in plain english.
+  - Inline comments should be provided for every block of code. These should explain what the block of code is aiming to achieve in plain English.
   - Inline comments should specify any non-trivial caveats with a given piece of code, considerations to make when maintaining it, etc.
   - Any considerations regarding potential weaknesses or future improvements to be made within your code should be accompanied by an inline comment prefixed with `// TODO: `
   - Comments should provide some value to a new contributor and improve code readability.
