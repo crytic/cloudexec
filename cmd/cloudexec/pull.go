@@ -55,43 +55,43 @@ func DownloadJobOutput(config config.Config, jobID int64, localPath string) erro
 		return nil
 	}
 
-  // Add the logs to the output dir
-  body, logErr := s3.GetObject(config, fmt.Sprintf("job-%v/cloudexec.log", jobID))
+	// Add the logs to the output dir
+	body, logErr := s3.GetObject(config, fmt.Sprintf("job-%v/cloudexec.log", jobID))
 
-  if len(objectKeys) == 0 && logErr != nil {
-    fmt.Printf("No output or logs are available for job %v\n", jobID)
-    return nil
-  } else if len(objectKeys) == 0 {
-    fmt.Printf("No output is available for job %v\n", jobID)
-  } else if logErr != nil {
-    fmt.Printf("No logs are available for job %v\n", jobID)
-  }
+	if len(objectKeys) == 0 && logErr != nil {
+		fmt.Printf("No output or logs are available for job %v\n", jobID)
+		return nil
+	} else if len(objectKeys) == 0 {
+		fmt.Printf("No output is available for job %v\n", jobID)
+	} else if logErr != nil {
+		fmt.Printf("No logs are available for job %v\n", jobID)
+	}
 
-  // Check if the local path is a directory, if not, create it
-  if _, err := os.Stat(localPath); os.IsNotExist(err) {
-    err = os.MkdirAll(localPath, 0755)
-    if err != nil {
-      return fmt.Errorf("Failed to create local directory at %s: %w", localPath, err)
-    }
-  }
+	// Check if the local path is a directory, if not, create it
+	if _, err := os.Stat(localPath); os.IsNotExist(err) {
+		err = os.MkdirAll(localPath, 0755)
+		if err != nil {
+			return fmt.Errorf("Failed to create local directory at %s: %w", localPath, err)
+		}
+	}
 
-  // Download output, if any
-  if len(objectKeys) > 0 {
-    err = downloadObjects(objectKeys, bucketPrefix)
-    if err != nil {
-      return err
-    }
-  }
+	// Download output, if any
+	if len(objectKeys) > 0 {
+		err = downloadObjects(objectKeys, bucketPrefix)
+		if err != nil {
+			return err
+		}
+	}
 
-  // Write logs to file, if available
-  if logErr == nil {
-    localFilePath := filepath.Join(localPath, "cloudexec.log")
-    err = os.WriteFile(localFilePath, body, 0644)
-    if err != nil {
-      return fmt.Errorf("Failed to write object content to file: %w", err)
-    }
-    fmt.Printf("Downloaded job %v logs to %s \n", jobID, localFilePath)
-  }
+	// Write logs to file, if available
+	if logErr == nil {
+		localFilePath := filepath.Join(localPath, "cloudexec.log")
+		err = os.WriteFile(localFilePath, body, 0644)
+		if err != nil {
+			return fmt.Errorf("Failed to write object content to file: %w", err)
+		}
+		fmt.Printf("Downloaded job %v logs to %s \n", jobID, localFilePath)
+	}
 
-  return nil
+	return nil
 }

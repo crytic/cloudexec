@@ -211,7 +211,7 @@ func DeleteSSHConfig(jobID int64) error {
 	}
 	// If there's no error, the file was deleted successfully
 	if err == nil {
-		fmt.Println("Deleted old SSH config file")
+		fmt.Printf("Deleted SSH config for job-%v\n", jobID)
 	}
 	return nil
 }

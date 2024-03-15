@@ -198,14 +198,14 @@ func main() {
 						if err != nil {
 							return err
 						}
-            jobID = latestCompletedJob.ID
+						jobID = latestCompletedJob.ID
 					}
-          path := c.String("path")
-          if path == "" {
-            path = fmt.Sprintf("cloudexec-%v", jobID)
-          }
-          err = DownloadJobOutput(config, jobID, path)
-          return err
+					path := c.String("path")
+					if path == "" {
+						path = fmt.Sprintf("cloudexec-%v", jobID)
+					}
+					err = DownloadJobOutput(config, jobID, path)
+					return err
 				},
 			},
 
@@ -240,9 +240,9 @@ func main() {
 						jobID = targetJob.ID
 					} else {
 						targetJob = existingState.GetJob(jobID)
-            if targetJob == nil {
-              return fmt.Errorf("Job %v does not exist", jobID)
-            }
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
+						}
 					}
 					// If the target job is running, stream logs
 					jobStatus := targetJob.Status
@@ -323,9 +323,9 @@ func main() {
 						targetJob = existingState.GetLatestJob()
 					} else {
 						targetJob = existingState.GetJob(jobID)
-            if targetJob == nil {
-              return fmt.Errorf("Job %v does not exist", jobID)
-            }
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
+						}
 					}
 					err = ConfirmCancelJob(config, existingState, targetJob)
 					if err != nil {
@@ -371,9 +371,9 @@ func main() {
 						}
 					} else {
 						targetJob := existingState.GetJob(jobID)
-            if targetJob == nil {
-              return fmt.Errorf("Job %v does not exist", jobID)
-            }
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
+						}
 						// Cancel servers associated with this job if they're running
 						if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
 							err = ConfirmCancelJob(config, existingState, targetJob)
@@ -424,14 +424,14 @@ func main() {
 						jobID = targetJob.ID
 					} else {
 						targetJob = existingState.GetJob(jobID)
-						if err != nil {
-							return err
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
 						}
-          }
-          path := c.String("path")
-          if path == "" {
-            path = fmt.Sprintf("cloudexec-%v", jobID)
-          }
+					}
+					path := c.String("path")
+					if path == "" {
+						path = fmt.Sprintf("cloudexec-%v", jobID)
+					}
 					// Pull all data
 					err = DownloadJobOutput(config, jobID, path)
 					if err != nil {
