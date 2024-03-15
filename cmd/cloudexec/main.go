@@ -386,7 +386,7 @@ func main() {
 							return err
 						}
 						// Flag all job data for deletion
-						err = CleanBucketAll(config, existingState, force)
+						err = CleanAll(config, existingState, force)
 						if err != nil {
 							return err
 						}
@@ -402,7 +402,7 @@ func main() {
 								return err
 							}
 						}
-						err = CleanBucketJob(config, existingState, jobID, force)
+						err = CleanJob(config, existingState, jobID, force)
 						if err != nil {
 							return err
 						}
@@ -475,7 +475,7 @@ func main() {
 						}
 					}
 					// Clean this job's data out of the bucket
-					err = CleanBucketJob(config, existingState, jobID, force)
+					err = CleanJob(config, existingState, jobID, force)
 					return err
 				},
 			},

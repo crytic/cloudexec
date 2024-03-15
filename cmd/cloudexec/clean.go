@@ -11,7 +11,7 @@ import (
 	"github.com/crytic/cloudexec/pkg/state"
 )
 
-func CleanBucketJob(config config.Config, existingState *state.State, jobID int64, force bool) error {
+func CleanJob(config config.Config, existingState *state.State, jobID int64, force bool) error {
 	prefix := fmt.Sprintf("job-%v", jobID)
 	objects, err := s3.ListObjects(config, prefix)
 	if err != nil {
@@ -61,13 +61,13 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 	return nil
 }
 
-func CleanBucketAll(config config.Config, existingState *state.State, force bool) error {
+func CleanAll(config config.Config, existingState *state.State, force bool) error {
 	if len(existingState.Jobs) == 0 {
 		log.Info("No jobs are available")
 		return nil
 	}
 	for _, job := range existingState.Jobs {
-		err := CleanBucketJob(config, existingState, job.ID, force)
+		err := CleanJob(config, existingState, job.ID, force)
 		if err != nil {
 			return err
 		}
