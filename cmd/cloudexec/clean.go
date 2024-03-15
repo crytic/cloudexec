@@ -23,7 +23,7 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 		log.Info("Bucket is already empty.")
 		return nil
 	}
-	log.Info("Removing ALL input, output, and logs associated with %s", prefix)
+	log.Warn("Removing all input, output, logs, and configuration associated with %s", prefix)
 	if !force { // Ask for confirmation before cleaning this job if no force flag
 		log.Warn("Confirm? (y/n)")
 		var response string
@@ -36,14 +36,13 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 	log.Wait("Deleting bucket contents")
 	// Delete all objects in the bucket
 	for _, object := range objects {
-		log.Info("Deleting object: ", object)
+		log.Info("Deleting object: %s", object)
 		err = s3.DeleteObject(config, object)
 		if err != nil {
 			return err
 		}
 	}
-	log.Good("Deleted %d objects from bucket", numToRm)
-	log.Wait("Removing job %v from state file", numToRm, jobID)
+	log.Good("Bucket is clean")
 	newState := &state.State{}
 	deleteJob := state.Job{
 		ID:     jobID,
@@ -51,10 +50,10 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 	}
 	newState.CreateJob(deleteJob)
 	err = state.MergeAndSave(config, newState)
+	log.Good("Removed job %v from state file", jobID)
 	if err != nil {
 		return fmt.Errorf("Error removing %s from state file: %w", prefix, err)
 	}
-	log.Wait("Removing ssh config for job %v", jobID)
 	err = ssh.DeleteSSHConfig(jobID)
 	if err != nil {
 		return fmt.Errorf("Failed to delete ssh config: %w", err)

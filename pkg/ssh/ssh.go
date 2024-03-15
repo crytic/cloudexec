@@ -212,7 +212,7 @@ func DeleteSSHConfig(jobID int64) error {
 	}
 	// If there's no error, the file was deleted successfully
 	if err == nil {
-		log.Info("Deleted SSH config for job-%v", jobID)
+		log.Good("Deleted SSH config for cloudexec-%v", jobID)
 	}
 	return nil
 }

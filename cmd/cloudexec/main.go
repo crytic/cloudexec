@@ -191,7 +191,7 @@ func main() {
 					}
 					jobID := c.Int64("job")
 					if jobID == 0 {
-						latestCompletedJob, err := state.GetLatestCompletedJob(existingState)
+						latestCompletedJob, err := existingState.GetLatestCompletedJob()
 						if err != nil {
 							return err
 						}
@@ -446,7 +446,7 @@ func main() {
 					jobID := c.Int64("job")
 					var targetJob *state.Job
 					if c.Int("job") == 0 {
-						targetJob, err = state.GetLatestCompletedJob(existingState)
+						targetJob, err = existingState.GetLatestCompletedJob()
 						if err != nil {
 							return err
 						}
@@ -579,7 +579,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Error("%v\n", err)
+		log.Error("%v", err)
 		os.Exit(1)
 	}
 
