@@ -37,8 +37,8 @@ type Snapshot struct {
  * the vps hub, everything related to digital ocean server management
  * exports the following functions:
  * - CheckAuth(config config.Config) (string, error)
- * - CreateDroplet(config config.Config, username string, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error)
- * - GetDropletsByName(config config.Config, dropletName string) ([]Droplet, error)
+ * - CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error)
+ * - GetAllDroplets(config config.Config) ([]Droplet, error)
  * - DeleteDroplet(config config.Config, dropletID int64) error
  * - GetLatestSnapshot(config config.Config) (Snapshot, error)
  */
@@ -47,10 +47,12 @@ var doClient *godo.Client
 var ctx context.Context
 
 const timeLayout = time.RFC3339
+const cloudexecTag = "Purpose:cloudexec"
 
 ////////////////////////////////////////
 // Internal Helper Functions
 
+// Create and cache a godo client
 func initializeDOClient(accessToken string) (*godo.Client, error) {
 	// Immediately return our cached client if available
 	if doClient != nil {
@@ -66,48 +68,46 @@ func createSSHKeyOnDigitalOcean(keyName string, publicKey string) (string, error
 		Name:      keyName,
 		PublicKey: publicKey,
 	}
-
 	key, _, err := doClient.Keys.Create(ctx, createKeyRequest)
 	if err != nil {
 		return "", fmt.Errorf("Failed to create SSH key on DigitalOcean: %w", err)
 	}
-
 	return key.Fingerprint, nil
 }
 
-func findSSHKeyOnDigitalOcean(dropletName string) (string, error) {
+// Query DigitalOcean to see if a key with the given name exists, return it's fingerprint if so
+func findSSHKeyOnDigitalOcean(keyName string) (string, string, error) {
 	opt := &godo.ListOptions{
 		Page:    1,
 		PerPage: 200, // Maximum allowed by DigitalOcean
 	}
-
 	keys, _, err := doClient.Keys.List(context.Background(), opt)
 	if err != nil {
-		return "", fmt.Errorf("Failed to list DigitalOcean SSH keys: %w", err)
+		return "", "", fmt.Errorf("Failed to list DigitalOcean SSH keys: %w", err)
 	}
-
 	for _, key := range keys {
-		if key.Name == dropletName {
-			return key.Fingerprint, nil
+		if key.Name == keyName {
+			fmt.Printf("SSH key found. ID=%v | Name=%s | Fingerprint=%v\n", key.ID, key.Name, key.Fingerprint)
+			return key.Fingerprint, key.PublicKey, nil
 		}
 	}
-
-	return "", fmt.Errorf("SSH key with name '%s' not found", dropletName)
+	return "", "", fmt.Errorf("SSH key with name '%s' not found", keyName)
 }
 
 ////////////////////////////////////////
 // Exported Functions
 
+// Query the droplet and spaces APIs to check whether the config contains valid credentials
 func CheckAuth(config config.Config) (string, error) {
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
 	if err != nil {
 		return "", err
 	}
-
 	greenCheck := "\u2705"
 	noEntry := "\U0001F6AB"
 
+	// Check Account authentication
 	_, _, err = doClient.Account.Get(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("%s Failed to authenticate with DigitalOcean API: %w", noEntry, err)
@@ -120,11 +120,11 @@ func CheckAuth(config config.Config) (string, error) {
 		return "", fmt.Errorf("%s Failed to authenticate with DigitalOcean Spaces API: %w", noEntry, err)
 	}
 	bucketResp := fmt.Sprintf("%s Successfully authenticated with DigitalOcean Spaces API", greenCheck)
-
 	return fmt.Sprintf("%s\n%s", doResp, bucketResp), nil
 }
 
-func CreateDroplet(config config.Config, username string, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error) {
+// Launch a new droplet
+func CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error) {
 	var droplet Droplet
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
@@ -132,15 +132,17 @@ func CreateDroplet(config config.Config, username string, region string, size st
 		return droplet, err
 	}
 
-	dropletName := fmt.Sprintf("cloudexec-%v", username)
+	dropletName := fmt.Sprintf("cloudexec-%v", config.Username)
 
-	sshKeyFingerprint, err := findSSHKeyOnDigitalOcean(dropletName)
+	sshKeyFingerprint, savedPublicKey, err := findSSHKeyOnDigitalOcean(dropletName)
 	if err == nil {
-		fmt.Printf("SSH key %v found on DigitalOcean with fingerprint: %v\n", dropletName, sshKeyFingerprint)
+		if publicKey != savedPublicKey {
+			return droplet, fmt.Errorf("Keys do not match! Consider removing your old key from DigitalOcean Security settings and re-running 'cloudexec launch'.")
+		}
 	} else {
 		// Create the SSH key on DigitalOcean
 		fmt.Println("Creating SSH key on DigitalOcean...")
-		keyName := fmt.Sprintf("cloudexec-%v", username)
+		keyName := fmt.Sprintf("cloudexec-%v", config.Username)
 		sshKeyFingerprint, err = createSSHKeyOnDigitalOcean(keyName, publicKey)
 		if err != nil {
 			return droplet, fmt.Errorf("Failed to create SSH key on DigitalOcean: %w", err)
@@ -169,8 +171,8 @@ func CreateDroplet(config config.Config, username string, region string, size st
 			},
 		},
 		Tags: []string{
-			"Purpose:cloudexec",
-			"Owner:" + username,
+			cloudexecTag,
+			"Owner:" + config.Username,
 			"Job:" + fmt.Sprintf("%v", jobId),
 		},
 		// Don't install the droplet agent
@@ -245,40 +247,47 @@ func GetDropletById(config config.Config, id int64) (Droplet, error) {
 	}, nil
 }
 
-// GetDropletsByName returns a list of droplets with the given tag using a godo client
-func GetDropletsByName(config config.Config, dropletName string) ([]Droplet, error) {
+// GetAllDroplets returns a list of droplets with the given tag using a godo client
+func GetAllDroplets(config config.Config) ([]Droplet, error) {
 	var droplets []Droplet
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
 	if err != nil {
 		return droplets, err
 	}
+	targetTag := fmt.Sprintf("Owner:%s", config.Username)
 
 	opts := &godo.ListOptions{}
 
-	for {
-		dropletList, resp, err := doClient.Droplets.ListByName(ctx, dropletName, opts)
+	for { // loop through all pages of the droplet list
+		myDroplets, resp, err := doClient.Droplets.ListByTag(ctx, targetTag, opts)
 		if err != nil {
 			return droplets, fmt.Errorf("Failed to fetch droplets by name: %w", err)
 		}
 
-		for _, droplet := range dropletList {
-			pubIp, err := droplet.PublicIPv4()
-			if err != nil {
-				return droplets, fmt.Errorf("Failed to fetch droplet IP: %w", err)
+		for _, droplet := range myDroplets {
+			for _, tag := range droplet.Tags {
+				if tag != cloudexecTag { // don't do anything until we find a cloudexec tag
+					continue
+				}
+				pubIp, err := droplet.PublicIPv4()
+				if err != nil {
+					return droplets, fmt.Errorf("Failed to fetch droplet IP: %w", err)
+				}
+				droplets = append(droplets, Droplet{
+					Name:    droplet.Name,
+					ID:      int64(droplet.ID),
+					IP:      pubIp,
+					Created: droplet.Created,
+					Size: Size{
+						CPUs:       int64(droplet.Vcpus),
+						Disk:       int64(droplet.Disk),
+						Memory:     int64(droplet.Memory),
+						HourlyCost: float64(droplet.Size.PriceHourly),
+					},
+				})
+				break
 			}
-			droplets = append(droplets, Droplet{
-				Name:    droplet.Name,
-				ID:      int64(droplet.ID),
-				IP:      pubIp,
-				Created: droplet.Created,
-				Size: Size{
-					CPUs:       int64(droplet.Vcpus),
-					Disk:       int64(droplet.Disk),
-					Memory:     int64(droplet.Memory),
-					HourlyCost: float64(droplet.Size.PriceHourly),
-				},
-			})
 		}
 
 		if resp.Links == nil || resp.Links.IsLastPage() {

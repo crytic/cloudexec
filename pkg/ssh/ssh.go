@@ -21,7 +21,7 @@ import (
 
 const HostConfigTemplate = `
 # Added by cloudexec
-Host {{.Host}}
+Host cloudexec-{{.JobID}}
   HostName {{.IPAddress}}
   User root
   IdentityFile {{.IdentityFile}}
@@ -34,7 +34,7 @@ Host {{.Host}}
 `
 
 type HostConfig struct {
-	Host         string
+	JobID        int64
 	IPAddress    string
 	IdentityFile string
 }
@@ -47,6 +47,8 @@ func getSSHDir() (string, error) {
 	return filepath.Join(user.HomeDir, ".ssh"), nil
 }
 
+// Verify that the $HOME/.ssh/config file imports everything from the config.d dir
+// We'll add/remove config for each server by adding/removing files in this dir
 func EnsureSSHIncludeConfig() error {
 	commentString := "# Added by cloudexec\n"
 	includeString := "Include config.d/*\n"
@@ -55,15 +57,12 @@ func EnsureSSHIncludeConfig() error {
 		return err
 	}
 	configPath := filepath.Join(sshDir, "config")
-
 	// Create the SSH directory if it does not exist
 	err = os.MkdirAll(sshDir, 0700)
 	if err != nil {
 		return fmt.Errorf("Failed to create SSH directory: %w", err)
 	}
-
 	var configFileContent string
-
 	// Check if the config file exists
 	if _, err = os.Stat(configPath); os.IsNotExist(err) {
 		// If the config file does not exist, create it with the includeString line
@@ -74,9 +73,7 @@ func EnsureSSHIncludeConfig() error {
 		if err != nil {
 			return fmt.Errorf("Failed to read main SSH config file: %w", err)
 		}
-
 		configFileContent = string(content)
-
 		// Check if the includeString line is present
 		if !strings.Contains(configFileContent, includeString) {
 			// If not present, add the line to the top of the file
@@ -86,88 +83,15 @@ func EnsureSSHIncludeConfig() error {
 			return nil
 		}
 	}
-
 	// Write the updated content to the config file
 	err = os.WriteFile(configPath, []byte(configFileContent), 0600)
 	if err != nil {
 		return fmt.Errorf("Failed to write main SSH config file: %w", err)
 	}
-
 	return nil
 }
 
-func AddSSHConfig(ipAddress string) error {
-	err := EnsureSSHIncludeConfig()
-	if err != nil {
-		return fmt.Errorf("Failed to validate main SSH config: %w", err)
-	}
-	sshDir, err := getSSHDir()
-	if err != nil {
-		return err
-	}
-
-	configDir := filepath.Join(sshDir, "config.d")
-	// fileIpAddress := strings.Replace(ipAddress, ".", "-", -1)
-	// configName := fmt.Sprintf("cloudexec-%v", fileIpAddress)
-	configName := "cloudexec"
-	configPath := filepath.Join(configDir, configName)
-	identityFile := filepath.Join(sshDir, "cloudexec-key")
-
-	// Create the SSH config directory if it does not exist
-	err = os.MkdirAll(configDir, 0700)
-	if err != nil {
-		return fmt.Errorf("Failed to create cloudexec SSH config directory: %w", err)
-	}
-
-	// If the config file does not exist, create it
-	configFile, err := os.Create(configPath)
-	if err != nil {
-		return fmt.Errorf("Failed to create SSH cloudexec config file: %w", err)
-	}
-	defer configFile.Close()
-
-	// Write the templated host config to file
-	config := HostConfig{
-		Host:         "cloudexec",
-		IPAddress:    ipAddress,
-		IdentityFile: identityFile,
-	}
-	tmpl, err := template.New("hostConfig").Parse(HostConfigTemplate)
-	if err != nil {
-		return fmt.Errorf("Failed to parse cloudexec SSH config template: %w", err)
-	}
-	// Execute the template and write to the file
-	err = tmpl.Execute(configFile, config)
-	if err != nil {
-		return fmt.Errorf("Failed to write cloudexec SSH config to file: %w", err)
-	}
-
-	return nil
-}
-
-func DeleteSSHConfig(filename string) error {
-	err := EnsureSSHIncludeConfig()
-	if err != nil {
-		return fmt.Errorf("Failed to validate SSH config: %w", err)
-	}
-	sshDir, err := getSSHDir()
-	if err != nil {
-		return err
-	}
-
-	configDir := filepath.Join(sshDir, "config.d")
-	configPath := filepath.Join(configDir, filename)
-	err = os.Remove(configPath)
-	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("unable to remove config file from config.d: %w", err)
-	}
-	// If there's no error, the file was deleted successfully
-	if err == nil {
-		fmt.Println("Deleted old cloudexec SSH config file")
-	}
-	return nil
-}
-
+// Creates a new keypair that will be used to auth with all servers
 func GetOrCreateSSHKeyPair() (string, error) {
 	err := EnsureSSHIncludeConfig()
 	if err != nil {
@@ -188,8 +112,11 @@ func GetOrCreateSSHKeyPair() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("Failed to read SSH public key file: %w", err)
 		}
+		fmt.Printf("Using existing ssh keypair at %s(.pub)\n", privateKeyPath)
 		return string(publicKeyBytes), nil
 	}
+
+	fmt.Printf("Creating new ssh keypair at %s(.pub)\n", privateKeyPath)
 
 	// Generate an ed25519 key pair
 	edPubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
@@ -224,14 +151,79 @@ func GetOrCreateSSHKeyPair() (string, error) {
 	return string(publicKeySSHFormat), nil
 }
 
-func WaitForSSHConnection() error {
+func AddSSHConfig(jobId int64, ipAddress string) error {
+	err := EnsureSSHIncludeConfig()
+	if err != nil {
+		return fmt.Errorf("Failed to validate main SSH config: %w", err)
+	}
 	sshDir, err := getSSHDir()
 	if err != nil {
 		return err
 	}
-	sshConfigName := "cloudexec"
-	sshConfigName = strings.ReplaceAll(sshConfigName, ".", "-")
-	sshConfigPath := filepath.Join(sshDir, "config.d", sshConfigName)
+	configDir := filepath.Join(sshDir, "config.d")
+	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	configPath := filepath.Join(configDir, hostname)
+	identityFile := filepath.Join(sshDir, "cloudexec-key")
+	// Create the SSH config directory if it does not exist
+	err = os.MkdirAll(configDir, 0700)
+	if err != nil {
+		return fmt.Errorf("Failed to create SSH config directory: %w", err)
+	}
+	// If the config file does not exist, create it
+	configFile, err := os.Create(configPath)
+	if err != nil {
+		return fmt.Errorf("Failed to create SSH config file: %w", err)
+	}
+	defer configFile.Close()
+	// Write the templated host config to file
+	config := HostConfig{
+		JobID:        jobId,
+		IPAddress:    ipAddress,
+		IdentityFile: identityFile,
+	}
+	tmpl, err := template.New("hostConfig").Parse(HostConfigTemplate)
+	if err != nil {
+		return fmt.Errorf("Failed to parse SSH config template: %w", err)
+	}
+	// Execute the template and write to the file
+	err = tmpl.Execute(configFile, config)
+	if err != nil {
+		return fmt.Errorf("Failed to write SSH config to file: %w", err)
+	}
+	return nil
+}
+
+func DeleteSSHConfig(jobId int64) error {
+	err := EnsureSSHIncludeConfig()
+	if err != nil {
+		return fmt.Errorf("Failed to validate SSH config: %w", err)
+	}
+	sshDir, err := getSSHDir()
+	if err != nil {
+		return err
+	}
+	configDir := filepath.Join(sshDir, "config.d")
+	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	configPath := filepath.Join(configDir, hostname)
+	err = os.Remove(configPath)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("unable to remove config file from config.d: %w", err)
+	}
+	// If there's no error, the file was deleted successfully
+	if err == nil {
+		fmt.Println("Deleted old SSH config file")
+	}
+	return nil
+}
+
+func WaitForSSHConnection(jobId int64) error {
+	sshDir, err := getSSHDir()
+	if err != nil {
+		return err
+	}
+	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	hostname = strings.ReplaceAll(hostname, ".", "-")
+	sshConfigPath := filepath.Join(sshDir, "config.d", hostname)
 
 	timeout := 60 * time.Second
 	retryInterval := 10 * time.Second
@@ -246,10 +238,10 @@ func WaitForSSHConnection() error {
 	if err != nil {
 		return fmt.Errorf("Failed to load SSH config: %w", err)
 	}
-	ipAddress, _ := cfg.Get("cloudexec", "HostName")
-	port, _ := cfg.Get("cloudexec", "Port")
-	user, _ := cfg.Get("cloudexec", "User")
-	identityFile, _ := cfg.Get("cloudexec", "IdentityFile")
+	ipAddress, _ := cfg.Get(hostname, "HostName")
+	port, _ := cfg.Get(hostname, "Port")
+	user, _ := cfg.Get(hostname, "User")
+	identityFile, _ := cfg.Get(hostname, "IdentityFile")
 
 	// Encode the identity file to bytes for use with the SSH client
 
@@ -286,14 +278,15 @@ func WaitForSSHConnection() error {
 			return fmt.Errorf("Timed out waiting for SSH connection: %w", err)
 		}
 
-		fmt.Printf("Can't connect to the droplet yet, retrying in %v...\n", retryInterval)
+		fmt.Printf("Can't connect to %s@%s:%s yet, retrying in %v...\n", user, ipAddress, port, retryInterval)
 		time.Sleep(retryInterval)
 	}
 }
 
-func StreamLogs() error {
-	// Stream the logs from the droplet with tail -f
-	sshCmd := exec.Command("ssh", "cloudexec", "tail", "-f", "/var/log/cloud-init-output.log")
+func StreamLogs(jobId int64) error {
+	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	// Stream the logs from the server with tail -f
+	sshCmd := exec.Command("ssh", hostname, "tail", "-f", "/var/log/cloud-init-output.log")
 	sshCmd.Stdout = os.Stdout
 	sshCmd.Stderr = os.Stderr
 	err := sshCmd.Run()
@@ -303,8 +296,9 @@ func StreamLogs() error {
 	return nil
 }
 
-func AttachToTmuxSession() error {
-	sshCmd := exec.Command("ssh", "-t", "cloudexec", "tmux", "attach-session", "-t", "cloudexec")
+func AttachToTmuxSession(jobId int64) error {
+	hostname := fmt.Sprintf("cloudexec-%v", jobId)
+	sshCmd := exec.Command("ssh", "-t", hostname, "tmux", "attach-session", "-t", "cloudexec")
 
 	// Connect the SSH command to the current terminal
 	sshCmd.Stdin = os.Stdin

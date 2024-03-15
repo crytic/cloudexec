@@ -88,8 +88,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	bucketName := fmt.Sprintf("cloudexec-%s", username)
 
 	// get existing state from bucket
-	fmt.Printf("Getting existing state from bucket %s...\n", bucketName)
-	existingState, err := state.GetState(config, bucketName)
+	existingState, err := state.GetState(config)
 	if err != nil {
 		return fmt.Errorf("Failed to get S3 state: %w", err)
 	}
@@ -107,7 +106,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	newState := &state.State{}
 	startedAt := time.Now().Unix()
 
-	newJob := state.JobInfo{
+	newJob := state.Job{
 		Name:      lc.Input.JobName,
 		ID:        thisJobId,
 		Status:    state.Provisioning,
@@ -115,8 +114,8 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	}
 	newState.CreateJob(newJob)
 	// sync state to bucket
-	fmt.Printf("Updating state in bucket %s...\n", bucketName)
-	err = state.UpdateState(config, bucketName, newState)
+	fmt.Printf("Adding new job to the state...\n")
+	err = state.UpdateState(config, newState)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}
@@ -125,7 +124,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	sourcePath := lc.Input.Directory // TODO: verify that this path exists & throw informative error if not
 	destPath := fmt.Sprintf("job-%v", thisJobId)
 	fmt.Printf("Compressing and uploading contents of directory %s to bucket %s/%s...\n", sourcePath, bucketName, destPath)
-	err = UploadDirectoryToSpaces(config, bucketName, sourcePath, destPath)
+	err = UploadDirectoryToSpaces(config, sourcePath, destPath)
 	if err != nil {
 		return fmt.Errorf("Failed to upload files: %w", err)
 	}
@@ -145,7 +144,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	}
 
 	fmt.Printf("Creating new %s droplet in %s for job %d...\n", dropletSize, config.DigitalOcean.SpacesRegion, thisJobId)
-	droplet, err := do.CreateDroplet(config, username, config.DigitalOcean.SpacesRegion, dropletSize, userData, thisJobId, publicKey)
+	droplet, err := do.CreateDroplet(config, config.DigitalOcean.SpacesRegion, dropletSize, userData, thisJobId, publicKey)
 	if err != nil {
 		return fmt.Errorf("Failed to create droplet: %w", err)
 	}
@@ -162,26 +161,21 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 		}
 	}
 	fmt.Printf("Uploading new state to %s\n", bucketName)
-	err = state.UpdateState(config, bucketName, newState)
+	err = state.UpdateState(config, newState)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}
 
 	// Add the droplet to the SSH config file
-	fmt.Println("Deleting old cloudexec instance from SSH config file...")
-	err = ssh.DeleteSSHConfig("cloudexec")
-	if err != nil {
-		return fmt.Errorf("Failed to delete old cloudexec entry from SSH config file: %w", err)
-	}
 	fmt.Println("Adding droplet to SSH config file...")
-	err = ssh.AddSSHConfig(droplet.IP)
+	err = ssh.AddSSHConfig(thisJobId, droplet.IP)
 	if err != nil {
 		return fmt.Errorf("Failed to add droplet to SSH config file: %w", err)
 	}
 
 	// Ensure we can SSH into the droplet
 	fmt.Println("Ensuring we can SSH into the droplet...")
-	err = ssh.WaitForSSHConnection()
+	err = ssh.WaitForSSHConnection(thisJobId)
 	if err != nil {
 		return fmt.Errorf("Failed to SSH into the droplet: %w", err)
 	}

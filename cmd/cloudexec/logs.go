@@ -10,10 +10,10 @@ import (
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
-func GetLogsFromBucket(config config.Config, jobID int, bucketName string) error {
+func GetLogsFromBucket(config config.Config, jobID int64) error {
 	itemKey := fmt.Sprintf("job-%d/logs/cloud-init-output.log", jobID)
 
-	log, err := s3.GetObject(config, bucketName, itemKey)
+	log, err := s3.GetObject(config, itemKey)
 	if err != nil {
 		if err.Error() == "The specified key does not exist." {
 			return fmt.Errorf("The specified job logs do not exist. Please check the job ID and try again.\n")

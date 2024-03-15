@@ -11,9 +11,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func PrintStatus(config config.Config, bucketName string, showAll bool) error {
-
-	existingState, err := state.GetState(config, bucketName)
+func PrintStatus(config config.Config, showAll bool) error {
+	existingState, err := state.GetState(config)
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,7 @@ func PrintStatus(config config.Config, bucketName string, showAll bool) error {
 	}
 
 	// Find the latest completed job
-	latestCompletedJob, err := state.GetLatestCompletedJob(bucketName, existingState)
+	latestCompletedJob, err := state.GetLatestCompletedJob(existingState)
 	if err != nil {
 		return err
 	}

@@ -24,7 +24,7 @@ const (
 	Timedout     JobStatus = "timedout"
 )
 
-type JobInfo struct {
+type Job struct {
 	Name        string    `json:"name"`
 	ID          int64     `json:"id"`
 	StartedAt   int64     `json:"started_at"` // Unix timestamp
@@ -36,15 +36,15 @@ type JobInfo struct {
 }
 
 type State struct {
-	Jobs []JobInfo `json:"jobs"`
+	Jobs []Job `json:"jobs"`
 }
 
-func GetState(config config.Config, bucketName string) (*State, error) {
+func GetState(config config.Config) (*State, error) {
 	stateKey := "state/state.json"
 	var state State
 
 	// Read the state.json object data
-	stateData, err := s3.GetObject(config, bucketName, stateKey)
+	stateData, err := s3.GetObject(config, stateKey)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read state data, make sure you've run 'cloudexec init': %w", err)
 	}
@@ -65,11 +65,21 @@ func GetState(config config.Config, bucketName string) (*State, error) {
 	return &state, nil
 }
 
-func UpdateState(config config.Config, bucketName string, newState *State) error {
+// GetJob returns a job with the specified ID or nil if not found.
+func (s *State) GetJob(jobID int64) *Job {
+	for _, job := range s.Jobs {
+		if job.ID == jobID {
+			return &job
+		}
+	}
+	return nil
+}
+
+func UpdateState(config config.Config, newState *State) error {
 	// TODO: Handle locking to prevent concurrent updates
 	stateKey := "state/state.json"
 
-	existingState, err := GetState(config, bucketName)
+	existingState, err := GetState(config)
 	if err != nil {
 		return err
 	}
@@ -85,7 +95,7 @@ func UpdateState(config config.Config, bucketName string, newState *State) error
 
 	for i := 1; i <= maxRetries; i++ {
 
-		err = s3.PutObject(config, bucketName, stateKey, mergedStateJSON)
+		err = s3.PutObject(config, stateKey, mergedStateJSON)
 
 		if err == nil {
 			break
@@ -94,7 +104,7 @@ func UpdateState(config config.Config, bucketName string, newState *State) error
 		if i < maxRetries {
 			time.Sleep(time.Duration(i) * time.Second)
 		} else {
-			return fmt.Errorf("Failed to update state in Spaces bucket after %d retries: %w", maxRetries, err)
+			return fmt.Errorf("Failed to update state after %d retries: %w", maxRetries, err)
 		}
 	}
 
@@ -135,7 +145,7 @@ func MergeStates(existingState, newState *State) {
 }
 
 // Helper function to remove deleted jobs from the new state
-func removeDeletedJobs(jobs []JobInfo, deletedJobs map[int64]bool) []JobInfo {
+func removeDeletedJobs(jobs []Job, deletedJobs map[int64]bool) []Job {
 	filteredJobs := jobs[:0]
 	for _, job := range jobs {
 		if !deletedJobs[job.ID] {
@@ -146,22 +156,12 @@ func removeDeletedJobs(jobs []JobInfo, deletedJobs map[int64]bool) []JobInfo {
 }
 
 // CreateJob adds a new job to the state.
-func (s *State) CreateJob(job JobInfo) {
+func (s *State) CreateJob(job Job) {
 	s.Jobs = append(s.Jobs, job)
 }
 
-// GetJob returns a job with the specified ID or nil if not found.
-func (s *State) GetJob(jobID int64) *JobInfo {
-	for _, job := range s.Jobs {
-		if job.ID == jobID {
-			return &job
-		}
-	}
-	return nil
-}
-
 // GetLatestJob returns the latest job in the state.
-func (s *State) GetLatestJob() *JobInfo {
+func (s *State) GetLatestJob() *Job {
 	if len(s.Jobs) > 0 {
 		return &s.Jobs[len(s.Jobs)-1]
 	}
@@ -178,24 +178,20 @@ func (s *State) DeleteJob(jobID int64) {
 	}
 }
 
-func (s *State) CancelRunningJobs(config config.Config, bucketName string, toCancelSlice []int64) error {
-	// Gather list of ids to mark as cancelled
-	toCancel := make(map[int64]bool)
-	for _, id := range toCancelSlice {
-		toCancel[id] = true
-	}
-
+func (s *State) CancelRunningJob(config config.Config, jobID int64) error {
 	// Mark any running jobs as cancelled
 	for i, job := range s.Jobs {
-		if job.Status == Running || job.Status == Provisioning {
-			if _, exists := toCancel[job.ID]; exists {
+		if job.ID == jobID {
+			if job.Status == Running || job.Status == Provisioning {
 				fmt.Printf("Setting status of job %d to 'Cancelled'\n", job.ID)
 				s.Jobs[i].Status = Cancelled
+				break
+			} else {
+				return fmt.Errorf("Job %v is not running", jobID)
 			}
 		}
 	}
-
-	err := UpdateState(config, bucketName, s)
+	err := UpdateState(config, s)
 	if err != nil {
 		return err
 	}
@@ -203,8 +199,8 @@ func (s *State) CancelRunningJobs(config config.Config, bucketName string, toCan
 	return nil
 }
 
-func GetLatestCompletedJob(bucketName string, state *State) (*JobInfo, error) {
-	var latestCompletedJob *JobInfo
+func GetLatestCompletedJob(state *State) (*Job, error) {
+	var latestCompletedJob *Job
 
 	// Find the latest completed job
 	for i := len(state.Jobs) - 1; i >= 0; i-- {
@@ -222,8 +218,8 @@ func GetLatestCompletedJob(bucketName string, state *State) (*JobInfo, error) {
 	return latestCompletedJob, nil
 }
 
-func GetJobIdsByInstance(config config.Config, bucketName string) (map[int64][]int64, error) {
-	existingState, err := GetState(config, bucketName)
+func GetJobIdsByInstance(config config.Config) (map[int64][]int64, error) {
+	existingState, err := GetState(config)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get state: %w", err)
 	}
