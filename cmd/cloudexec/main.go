@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
 	"github.com/urfave/cli/v2"
@@ -32,7 +33,7 @@ func main() {
 				Usage:   "Gets the version of the app",
 				Aliases: []string{"v"},
 				Action: func(*cli.Context) error {
-					fmt.Printf("cloudexec %s, commit %s, built at %s", Version, Commit, Date)
+					log.Info("cloudexec %s, commit %s, built at %s", Version, Commit, Date)
 					return nil
 				},
 			},
@@ -70,16 +71,15 @@ func main() {
 					if configErr != nil {
 						return configErr
 					}
-					resp, err := do.CheckAuth(config)
+					err := do.CheckAuth(config)
 					if err != nil {
 						return err
 					}
-					fmt.Println(resp)
 					snap, err := do.GetLatestSnapshot(config)
 					if err != nil {
 						return err
 					}
-					fmt.Printf("Using CloudExec image: %s\n", snap.Name)
+					log.Info("Using CloudExec image: %s\n", snap.Name)
 					return nil
 				},
 			},

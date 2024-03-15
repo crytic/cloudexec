@@ -114,8 +114,8 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	}
 	newState.CreateJob(newJob)
 	// sync state to bucket
-	fmt.Printf("Adding new job to the state...\n")
 	err = state.MergeAndSave(config, newState)
+	fmt.Printf("Registered new job with id %v\n", thisJobId)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}

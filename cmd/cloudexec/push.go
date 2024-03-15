@@ -17,7 +17,7 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 	zipFilePath := filepath.Join(os.TempDir(), zipFileName)
 
 	// Create a file where we will write the zipped archive
-	fmt.Printf("Creating zipped archive at %s\n", zipFilePath)
+	// fmt.Printf("Creating zipped archive at %s\n", zipFilePath)
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 		// If it's a symbolic link, resolve the target
 		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
 			target, err = os.Readlink(path)
-			fmt.Printf("Resolved link from %s to %s\n", path, target)
+			// fmt.Printf("Resolved link from %s to %s\n", path, target)
 			if err != nil {
 				return err
 			}
@@ -53,7 +53,7 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 
 		if targetInfo.IsDir() {
 			cleanPath := filepath.Clean(path) + string(filepath.Separator)
-			fmt.Printf("Creating directory %s in the zipped archive\n", cleanPath)
+			// fmt.Printf("Creating directory %s in the zipped archive\n", cleanPath)
 			_, err = zipWriter.Create(cleanPath)
 			if err != nil {
 				return err
@@ -66,7 +66,7 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 			return nil
 		}
 
-		fmt.Printf("Adding %s to the zipped archive\n", target)
+		// fmt.Printf("Adding %s to the zipped archive\n", target)
 
 		// Create a new file entry in the zipped archive
 		zipFileEntry, err := zipWriter.Create(path)
