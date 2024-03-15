@@ -69,7 +69,7 @@ func CleanAll(config config.Config, existingState *state.State, force bool) erro
 	for _, job := range existingState.Jobs {
 		err := CleanJob(config, existingState, job.ID, force)
 		if err != nil {
-			return err
+			log.Error("Failed to clean job %v", job.ID)
 		}
 	}
 	return nil

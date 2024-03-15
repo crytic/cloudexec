@@ -54,7 +54,7 @@ func CancelAll(config config.Config, existingState *state.State, force bool) err
 		}
 		err = CancelJob(config, existingState, &job, force)
 		if err != nil {
-			log.Warn("Failed to cancel job %v", job.ID)
+			log.Error("Failed to cancel job %v", job.ID)
 		}
 	}
 	return nil
