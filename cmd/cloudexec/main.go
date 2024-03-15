@@ -199,7 +199,7 @@ func main() {
 					}
 					path := c.String("path")
 					if path == "" {
-						path = fmt.Sprintf("cloudexec-%v", jobID)
+						path = fmt.Sprintf("cloudexec/job-%v", jobID)
 					}
 					err = DownloadJobOutput(config, jobID, path)
 					return err
@@ -459,7 +459,7 @@ func main() {
 					}
 					path := c.String("path")
 					if path == "" {
-						path = fmt.Sprintf("cloudexec-%v", jobID)
+						path = fmt.Sprintf("cloudexec/job-%v", jobID)
 					}
 					// Pull all data
 					err = DownloadJobOutput(config, jobID, path)
