@@ -99,9 +99,9 @@
             version = "0.1.2"; # from cmd/root.go
             src = builtins.fetchGit {
               url = "git+ssh://git@github.com/trailofbits/medusa";
-              rev = "ac99e78ee38df86a8afefb21f105be9e4eae46ee";
+              rev = "72e9b8586ad93b37ff9063ccf3f5b471f934c264";
             };
-            vendorSha256 = "sha256-k5DtmpNi1ynSWgJ6b9EIlqCM6OlCkQf3Cf/daP+I7mY=";
+            vendorSha256 = "sha256-IKB8c6oxF5h88FdzUAmNA96BpNo/LIbwzuDCMFsdZNE=";
             nativeBuildInputs = [
               packages.crytic-compile
               pkgs.solc

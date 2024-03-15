@@ -39,32 +39,39 @@ type State struct {
 	Jobs []Job `json:"jobs"`
 }
 
+// Helper function to remove deleted jobs from the new state
+func removeDeletedJobs(jobs []Job, deletedJobs map[int64]bool) []Job {
+	filteredJobs := jobs[:0]
+	for _, job := range jobs {
+		if !deletedJobs[job.ID] {
+			filteredJobs = append(filteredJobs, job)
+		}
+	}
+	return filteredJobs
+}
+
 ////////////////////////////////////////
 // Public Functions
 
 func GetState(config config.Config) (*State, error) {
 	stateKey := "state/state.json"
 	var state State
-
 	// Read the state.json object data
 	stateData, err := s3.GetObject(config, stateKey)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read state data, make sure you've run 'cloudexec init': %w", err)
 	}
-
 	// Unmarshal the state JSON data into a State struct
 	err = json.Unmarshal(stateData, &state)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal state JSON: %w", err)
 	}
-
 	// Replace empty names with a placeholder
 	for i, job := range state.Jobs {
 		if job.Name == "" {
 			state.Jobs[i].Name = "no name"
 		}
 	}
-
 	return &state, nil
 }
 
@@ -95,17 +102,6 @@ func MergeStates(existingState, newState *State) {
 	}
 	// Remove deleted jobs from the new state
 	newState.Jobs = removeDeletedJobs(newState.Jobs, deletedJobs)
-}
-
-// Helper function to remove deleted jobs from the new state
-func removeDeletedJobs(jobs []Job, deletedJobs map[int64]bool) []Job {
-	filteredJobs := jobs[:0]
-	for _, job := range jobs {
-		if !deletedJobs[job.ID] {
-			filteredJobs = append(filteredJobs, job)
-		}
-	}
-	return filteredJobs
 }
 
 func MergeAndSave(config config.Config, newState *State) error {
