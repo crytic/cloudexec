@@ -14,4 +14,4 @@ fi
 '''
 
 # This command is run after the setup script completes.
-run = "medusa fuzz --target flags.sol"
+run = "medusa fuzz"
