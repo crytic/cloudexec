@@ -66,7 +66,7 @@ func main() {
 				Usage:   "Verifies cloud authentication",
 				Aliases: []string{"c"},
 				Action: func(*cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -105,7 +105,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -149,7 +149,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -181,7 +181,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -221,7 +221,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -271,7 +271,7 @@ func main() {
 				Aliases: []string{"a"},
 				Usage:   "Attach to a running job",
 				Action: func(*cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -285,9 +285,9 @@ func main() {
 						return err
 					}
 					targetJob := existingState.GetLatestJob()
-          if targetJob == nil {
-            return fmt.Errorf("No jobs are available")
-          }
+					if targetJob == nil {
+						return fmt.Errorf("No jobs are available")
+					}
 					jobStatus := targetJob.Status
 					// Attach to the running job with tmux
 					if jobStatus == state.Running {
@@ -313,9 +313,13 @@ func main() {
 						Value: 0,
 						Usage: "Optional job ID to get logs from",
 					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Do not ask for user confirmation",
+					},
 				},
 				Action: func(c *cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -327,6 +331,7 @@ func main() {
 					if err != nil {
 						return err
 					}
+					force := c.Bool("force")
 					jobID := c.Int64("job")
 					var targetJob *state.Job
 					if jobID == 0 {
@@ -334,14 +339,14 @@ func main() {
 						if targetJob == nil {
 							return fmt.Errorf("No jobs are available")
 						}
-            // TODO: error if no jobs present
+						// TODO: error if no jobs present
 					} else {
 						targetJob = existingState.GetJob(jobID)
 						if targetJob == nil {
 							return fmt.Errorf("Job %v does not exist", jobID)
 						}
 					}
-					err = CancelJob(config, existingState, targetJob)
+					err = CancelJob(config, existingState, targetJob, force)
 					if err != nil {
 						return err
 					}
@@ -358,9 +363,13 @@ func main() {
 						Value: 0,
 						Usage: "Optional job ID to get logs from",
 					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Do not ask for user confirmation",
+					},
 				},
 				Action: func(c *cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -372,15 +381,16 @@ func main() {
 					if err != nil {
 						return err
 					}
+					force := c.Bool("force")
 					jobID := c.Int64("job")
 					if jobID == 0 { // If no job provided, clean everything
 						// Cancel running servers
-						err = CancelAll(config, existingState)
+						err = CancelAll(config, existingState, force)
 						if err != nil {
 							return err
 						}
 						// Flag all job data for deletion
-						err = CleanBucketAll(config, existingState)
+						err = CleanBucketAll(config, existingState, force)
 						if err != nil {
 							return err
 						}
@@ -391,12 +401,12 @@ func main() {
 						}
 						// Cancel servers associated with this job if they're running
 						if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
-							err = CancelJob(config, existingState, targetJob)
+							err = CancelJob(config, existingState, targetJob, force)
 							if err != nil {
 								return err
 							}
 						}
-						err = CleanBucketJob(config, existingState, jobID)
+						err = CleanBucketJob(config, existingState, jobID, force)
 						if err != nil {
 							return err
 						}
@@ -424,7 +434,7 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
-          config, configErr := LoadConfig(ConfigFilePath)
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
 						return configErr
 					}
@@ -460,15 +470,16 @@ func main() {
 					if err != nil {
 						return err
 					}
+					force := c.Bool("force")
 					// Cancel servers associated with this job if they're running
 					if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
-						err = CancelJob(config, existingState, targetJob)
+						err = CancelJob(config, existingState, targetJob, force)
 						if err != nil {
 							return err
 						}
 					}
 					// Clean this job's data out of the bucket
-					err = CleanBucketJob(config, existingState, jobID)
+					err = CleanBucketJob(config, existingState, jobID, force)
 					return err
 				},
 			},
@@ -482,7 +493,7 @@ func main() {
 						Name:  "list",
 						Usage: "List jobs in the state file",
 						Action: func(c *cli.Context) error {
-              config, configErr := LoadConfig(ConfigFilePath)
+							config, configErr := LoadConfig(ConfigFilePath)
 							if configErr != nil {
 								return configErr
 							}
@@ -507,7 +518,7 @@ func main() {
 						Name:  "rm",
 						Usage: "Remove a job from the state file",
 						Action: func(c *cli.Context) error {
-              config, configErr := LoadConfig(ConfigFilePath)
+							config, configErr := LoadConfig(ConfigFilePath)
 							if configErr != nil {
 								return configErr
 							}
@@ -544,7 +555,7 @@ func main() {
 						Name:  "json",
 						Usage: "Output the raw state file as JSON",
 						Action: func(c *cli.Context) error {
-              config, configErr := LoadConfig(ConfigFilePath)
+							config, configErr := LoadConfig(ConfigFilePath)
 							if configErr != nil {
 								return configErr
 							}
