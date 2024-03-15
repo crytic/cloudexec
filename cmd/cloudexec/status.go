@@ -57,14 +57,11 @@ func PrintStatus(config config.Config, showAll bool) error {
 		return strconv.FormatFloat(f, 'f', 4, 64)
 	}
 
-	// Find the latest completed job
-	latestCompletedJob, err := state.GetLatestCompletedJob(existingState)
-	if err != nil {
-		return err
-	}
+	// Find the latest job to use as the default display
+	latestJob := existingState.GetLatestJob()
 
 	for _, job := range existingState.Jobs {
-		if showAll || (job.Status == state.Running || job.Status == state.Provisioning) || (latestCompletedJob != nil && job.ID == latestCompletedJob.ID) {
+		if showAll || (job.Status == state.Running || job.Status == state.Provisioning) || (latestJob != nil && job.ID == latestJob.ID) {
 
 			latestUpdate := func() int64 {
 				if job.CompletedAt == 0 {

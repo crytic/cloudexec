@@ -75,50 +75,40 @@ func (s *State) GetJob(jobID int64) *Job {
 	return nil
 }
 
-func UpdateState(config config.Config, newState *State) error {
+func MergeAndSave(config config.Config, newState *State) error {
 	// TODO: Handle locking to prevent concurrent updates
 	stateKey := "state/state.json"
-
 	existingState, err := GetState(config)
 	if err != nil {
 		return err
 	}
-
 	// Merge the existing state and the new state
 	MergeStates(existingState, newState)
-
 	// Marshal the merged state struct to JSON
 	mergedStateJSON, err := json.Marshal(existingState)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal merged state to JSON: %w", err)
 	}
-
 	for i := 1; i <= maxRetries; i++ {
-
 		err = s3.PutObject(config, stateKey, mergedStateJSON)
-
 		if err == nil {
 			break
 		}
-
 		if i < maxRetries {
 			time.Sleep(time.Duration(i) * time.Second)
 		} else {
 			return fmt.Errorf("Failed to update state after %d retries: %w", maxRetries, err)
 		}
 	}
-
 	return nil
 }
 
 func MergeStates(existingState, newState *State) {
 	// Create a map to keep track of deleted jobs
 	deletedJobs := make(map[int64]bool)
-
 	// Iterate through the jobs in the new state
 	for _, newJob := range newState.Jobs {
 		jobFound := false
-
 		// Iterate through the existing jobs and update if the job ID matches
 		for i, existingJob := range existingState.Jobs {
 			if existingJob.ID == newJob.ID {
@@ -133,13 +123,11 @@ func MergeStates(existingState, newState *State) {
 				break
 			}
 		}
-
 		// If the job is not found in the existing state and should not be deleted, add it
 		if !jobFound && !newJob.Delete {
 			existingState.Jobs = append(existingState.Jobs, newJob)
 		}
 	}
-
 	// Remove deleted jobs from the new state
 	newState.Jobs = removeDeletedJobs(newState.Jobs, deletedJobs)
 }
@@ -168,16 +156,6 @@ func (s *State) GetLatestJob() *Job {
 	return nil
 }
 
-// DeleteJob removes a job with the specified ID from the state.
-func (s *State) DeleteJob(jobID int64) {
-	for i, job := range s.Jobs {
-		if job.ID == jobID {
-			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
-			break
-		}
-	}
-}
-
 func (s *State) CancelRunningJob(config config.Config, jobID int64) error {
 	// Mark any running jobs as cancelled
 	for i, job := range s.Jobs {
@@ -191,7 +169,7 @@ func (s *State) CancelRunningJob(config config.Config, jobID int64) error {
 			}
 		}
 	}
-	err := UpdateState(config, s)
+	err := MergeAndSave(config, s)
 	if err != nil {
 		return err
 	}
@@ -212,7 +190,7 @@ func GetLatestCompletedJob(state *State) (*Job, error) {
 	}
 
 	if latestCompletedJob == nil {
-		return nil, errors.New("no completed jobs available")
+		return nil, errors.New("No completed jobs available")
 	}
 
 	return latestCompletedJob, nil

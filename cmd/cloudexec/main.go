@@ -22,9 +22,6 @@ var (
 )
 
 func main() {
-	// Attempt to load the configuration
-	config, configErr := LoadConfig(ConfigFilePath)
-
 	app := &cli.App{
 		Name:  "cloudexec",
 		Usage: "easily run cloud based jobs",
@@ -69,8 +66,9 @@ func main() {
 				Usage:   "Verifies cloud authentication",
 				Aliases: []string{"c"},
 				Action: func(*cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
 					resp, err := do.CheckAuth(config)
 					if err != nil {
@@ -107,8 +105,9 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
 					// Check if a local cloudexec.toml exists
 					if _, err := os.Stat(LaunchConfigFilePath); os.IsNotExist(err) {
@@ -150,8 +149,9 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
@@ -175,16 +175,16 @@ func main() {
 						Value: 0,
 						Usage: "Optional job ID to pull results from",
 					},
+					&cli.StringFlag{
+						Name:  "path",
+						Usage: "Optional directory name where pulled data will be saved",
+					},
 				},
 				Action: func(c *cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
-					// Check if the path is provided
-					if c.Args().Len() < 1 {
-						return fmt.Errorf("please provide a path to download job outputs to")
-					}
-					path := c.Args().Get(0)
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
 						return err
@@ -193,23 +193,20 @@ func main() {
 					if err != nil {
 						return err
 					}
-					if c.Int("job") != 0 {
-						err = DownloadJobOutput(config, c.Int("job"), path)
-						if err != nil {
-							return err
-						}
-						return nil
-					} else {
+					jobID := c.Int64("job")
+					if jobID == 0 {
 						latestCompletedJob, err := state.GetLatestCompletedJob(existingState)
 						if err != nil {
 							return err
 						}
-						err = DownloadJobOutput(config, int(latestCompletedJob.ID), path)
-						if err != nil {
-							return err
-						}
-						return nil
+						jobID = latestCompletedJob.ID
 					}
+					path := c.String("path")
+					if path == "" {
+						path = fmt.Sprintf("cloudexec-%v", jobID)
+					}
+					err = DownloadJobOutput(config, jobID, path)
+					return err
 				},
 			},
 
@@ -224,8 +221,9 @@ func main() {
 					},
 				},
 				Action: func(c *cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
@@ -241,9 +239,15 @@ func main() {
 					// Get logs from the latest job if specific ID was not provided
 					if jobID == 0 {
 						targetJob = existingState.GetLatestJob()
+						if targetJob == nil {
+							return fmt.Errorf("No jobs are available")
+						}
 						jobID = targetJob.ID
 					} else {
 						targetJob = existingState.GetJob(jobID)
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
+						}
 					}
 					// If the target job is running, stream logs
 					jobStatus := targetJob.Status
@@ -267,8 +271,9 @@ func main() {
 				Aliases: []string{"a"},
 				Usage:   "Attach to a running job",
 				Action: func(*cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
@@ -280,6 +285,9 @@ func main() {
 						return err
 					}
 					targetJob := existingState.GetLatestJob()
+					if targetJob == nil {
+						return fmt.Errorf("No jobs are available")
+					}
 					jobStatus := targetJob.Status
 					// Attach to the running job with tmux
 					if jobStatus == state.Running {
@@ -305,10 +313,15 @@ func main() {
 						Value: 0,
 						Usage: "Optional job ID to get logs from",
 					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Do not ask for user confirmation",
+					},
 				},
 				Action: func(c *cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
@@ -318,14 +331,22 @@ func main() {
 					if err != nil {
 						return err
 					}
+					force := c.Bool("force")
 					jobID := c.Int64("job")
 					var targetJob *state.Job
 					if jobID == 0 {
 						targetJob = existingState.GetLatestJob()
+						if targetJob == nil {
+							return fmt.Errorf("No jobs are available")
+						}
+						// TODO: error if no jobs present
 					} else {
 						targetJob = existingState.GetJob(jobID)
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
+						}
 					}
-					err = CancelJob(targetJob, existingState, config)
+					err = CancelJob(config, existingState, targetJob, force)
 					if err != nil {
 						return err
 					}
@@ -336,9 +357,21 @@ func main() {
 			{
 				Name:  "clean",
 				Usage: "Cleans up any running cloudexec droplets and clears the spaces bucket",
-				Action: func(*cli.Context) error {
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "job",
+						Value: 0,
+						Usage: "Optional job ID to get logs from",
+					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Do not ask for user confirmation",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
 					if configErr != nil {
-						return configErr // Abort on configuration error
+						return configErr
 					}
 					err := Init(config) // Initialize the s3 state
 					if err != nil {
@@ -348,16 +381,106 @@ func main() {
 					if err != nil {
 						return err
 					}
-					err = ConfirmCancelAll(config, existingState)
-					if err != nil {
-						return err
-					}
-					// clean existing files from the bucket
-					err = ResetBucket(config)
-					if err != nil {
-						return err
+					force := c.Bool("force")
+					jobID := c.Int64("job")
+					if jobID == 0 { // If no job provided, clean everything
+						// Cancel running servers
+						err = CancelAll(config, existingState, force)
+						if err != nil {
+							return err
+						}
+						// Flag all job data for deletion
+						err = CleanBucketAll(config, existingState, force)
+						if err != nil {
+							return err
+						}
+					} else {
+						targetJob := existingState.GetJob(jobID)
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
+						}
+						// Cancel servers associated with this job if they're running
+						if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
+							err = CancelJob(config, existingState, targetJob, force)
+							if err != nil {
+								return err
+							}
+						}
+						err = CleanBucketJob(config, existingState, jobID, force)
+						if err != nil {
+							return err
+						}
 					}
 					return nil
+				},
+			},
+
+			{
+				Name:  "pull-and-clean",
+				Usage: "Pulls all output data then cleans up any info associated with the given job",
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "job",
+						Value: 0,
+						Usage: "Job ID to fetch logs for and clean",
+					},
+					&cli.StringFlag{
+						Name:  "path",
+						Usage: "Optional directory name where pulled data will be saved",
+					},
+					&cli.BoolFlag{
+						Name:  "force",
+						Usage: "Do not ask for user confirmation",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					config, configErr := LoadConfig(ConfigFilePath)
+					if configErr != nil {
+						return configErr
+					}
+					err := Init(config) // Initialize the s3 state
+					if err != nil {
+						return err
+					}
+					existingState, err := state.GetState(config)
+					if err != nil {
+						return err
+					}
+					// If no job id provided, use latest completed job
+					jobID := c.Int64("job")
+					var targetJob *state.Job
+					if c.Int("job") == 0 {
+						targetJob, err = state.GetLatestCompletedJob(existingState)
+						if err != nil {
+							return err
+						}
+						jobID = targetJob.ID
+					} else {
+						targetJob = existingState.GetJob(jobID)
+						if targetJob == nil {
+							return fmt.Errorf("Job %v does not exist", jobID)
+						}
+					}
+					path := c.String("path")
+					if path == "" {
+						path = fmt.Sprintf("cloudexec-%v", jobID)
+					}
+					// Pull all data
+					err = DownloadJobOutput(config, jobID, path)
+					if err != nil {
+						return err
+					}
+					force := c.Bool("force")
+					// Cancel servers associated with this job if they're running
+					if targetJob.Status == state.Provisioning || targetJob.Status == state.Running {
+						err = CancelJob(config, existingState, targetJob, force)
+						if err != nil {
+							return err
+						}
+					}
+					// Clean this job's data out of the bucket
+					err = CleanBucketJob(config, existingState, jobID, force)
+					return err
 				},
 			},
 
@@ -370,8 +493,9 @@ func main() {
 						Name:  "list",
 						Usage: "List jobs in the state file",
 						Action: func(c *cli.Context) error {
+							config, configErr := LoadConfig(ConfigFilePath)
 							if configErr != nil {
-								return configErr // Abort on configuration error
+								return configErr
 							}
 							err := Init(config) // Initialize the s3 state
 							if err != nil {
@@ -394,8 +518,9 @@ func main() {
 						Name:  "rm",
 						Usage: "Remove a job from the state file",
 						Action: func(c *cli.Context) error {
+							config, configErr := LoadConfig(ConfigFilePath)
 							if configErr != nil {
-								return configErr // Abort on configuration error
+								return configErr
 							}
 							err := Init(config) // Initialize the s3 state
 							if err != nil {
@@ -418,7 +543,7 @@ func main() {
 								Delete: true,
 							}
 							newState.CreateJob(deleteJob)
-							err = state.UpdateState(config, newState)
+							err = state.MergeAndSave(config, newState)
 							if err != nil {
 								return err
 							}
@@ -430,8 +555,9 @@ func main() {
 						Name:  "json",
 						Usage: "Output the raw state file as JSON",
 						Action: func(c *cli.Context) error {
+							config, configErr := LoadConfig(ConfigFilePath)
 							if configErr != nil {
-								return configErr // Abort on configuration error
+								return configErr
 							}
 							err := Init(config) // Initialize the s3 state
 							if err != nil {

@@ -162,7 +162,7 @@ cleanup() {
 
 	if [[ -s "/var/log/cloud-init-output.log" ]]; then
 		echo "Uploading logs..."
-		s3cmd put /var/log/cloud-init-output.log "s3://${BUCKET_NAME}/job-${JOB_ID}/logs/"
+		s3cmd put /var/log/cloud-init-output.log "s3://${BUCKET_NAME}/job-${JOB_ID}/cloudexec.log"
 	else
 		echo "No logs to upload.."
 	fi

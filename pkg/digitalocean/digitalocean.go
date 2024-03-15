@@ -37,7 +37,7 @@ type Snapshot struct {
  * the vps hub, everything related to digital ocean server management
  * exports the following functions:
  * - CheckAuth(config config.Config) (string, error)
- * - CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error)
+ * - CreateDroplet(config config.Config, region string, size string, userData string, jobID int64, publicKey string) (Droplet, error)
  * - GetAllDroplets(config config.Config) ([]Droplet, error)
  * - DeleteDroplet(config config.Config, dropletID int64) error
  * - GetLatestSnapshot(config config.Config) (Snapshot, error)
@@ -124,7 +124,7 @@ func CheckAuth(config config.Config) (string, error) {
 }
 
 // Launch a new droplet
-func CreateDroplet(config config.Config, region string, size string, userData string, jobId int64, publicKey string) (Droplet, error) {
+func CreateDroplet(config config.Config, region string, size string, userData string, jobID int64, publicKey string) (Droplet, error) {
 	var droplet Droplet
 	// create a client
 	doClient, err := initializeDOClient(config.DigitalOcean.ApiKey)
@@ -132,9 +132,11 @@ func CreateDroplet(config config.Config, region string, size string, userData st
 		return droplet, err
 	}
 
-	dropletName := fmt.Sprintf("cloudexec-%v", config.Username)
+	keyName := fmt.Sprintf("cloudexec-%v", config.Username)
+	sshKeyFingerprint, savedPublicKey, err := findSSHKeyOnDigitalOcean(keyName)
 
-	sshKeyFingerprint, savedPublicKey, err := findSSHKeyOnDigitalOcean(dropletName)
+	dropletName := fmt.Sprintf("%s-%v", keyName, jobID)
+
 	if err == nil {
 		if publicKey != savedPublicKey {
 			return droplet, fmt.Errorf("Keys do not match! Consider removing your old key from DigitalOcean Security settings and re-running 'cloudexec launch'.")
@@ -173,7 +175,7 @@ func CreateDroplet(config config.Config, region string, size string, userData st
 		Tags: []string{
 			cloudexecTag,
 			"Owner:" + config.Username,
-			"Job:" + fmt.Sprintf("%v", jobId),
+			"Job:" + fmt.Sprintf("%v", jobID),
 		},
 		// Don't install the droplet agent
 		WithDropletAgent: new(bool),
