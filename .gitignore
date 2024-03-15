@@ -1,9 +1,15 @@
-*.backup
+# Environment
 .direnv/
 .env
+
+# Editors
 .vscode
 .vscode/
-bin/
+
+# Output
 dist/
-example/input.zip
 result
+cloudexec/
+example/input/crytic-export/
+example/input/output/
+example/input.zip
