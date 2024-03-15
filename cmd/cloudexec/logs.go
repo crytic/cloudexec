@@ -11,7 +11,7 @@ import (
 )
 
 func GetLogsFromBucket(config config.Config, jobID int64) error {
-	itemKey := fmt.Sprintf("job-%d/logs/cloud-init-output.log", jobID)
+	itemKey := fmt.Sprintf("job-%d/cloudexec.log", jobID)
 
 	log, err := s3.GetObject(config, itemKey)
 	if err != nil {
