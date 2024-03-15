@@ -109,7 +109,7 @@ func CheckAuth(config config.Config) error {
 	if err != nil {
 		return fmt.Errorf("Failed to authenticate with DigitalOcean API: %w", err)
 	}
-  log.Good("Successfully authenticated with DigitalOcean API")
+	log.Good("Successfully authenticated with DigitalOcean API")
 
 	// Check Spaces authentication
 	_, err = s3.ListBuckets(config)
