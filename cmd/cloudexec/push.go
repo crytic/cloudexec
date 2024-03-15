@@ -8,16 +8,18 @@ import (
 	"path/filepath"
 
 	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
 func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath string) error {
+	log.Wait("Compressing and uploading contents of directory %s to bucket at %s", sourcePath, destPath)
+
 	// Compute the path for the zipped archive of sourcePath
 	zipFileName := "input.zip"
 	zipFilePath := filepath.Join(os.TempDir(), zipFileName)
 
 	// Create a file where we will write the zipped archive
-	// fmt.Printf("Creating zipped archive at %s\n", zipFilePath)
 	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
 		return err
@@ -38,7 +40,6 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 		// If it's a symbolic link, resolve the target
 		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
 			target, err = os.Readlink(path)
-			// fmt.Printf("Resolved link from %s to %s\n", path, target)
 			if err != nil {
 				return err
 			}
@@ -53,7 +54,6 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 
 		if targetInfo.IsDir() {
 			cleanPath := filepath.Clean(path) + string(filepath.Separator)
-			// fmt.Printf("Creating directory %s in the zipped archive\n", cleanPath)
 			_, err = zipWriter.Create(cleanPath)
 			if err != nil {
 				return err
@@ -65,8 +65,6 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 		if filepath.Base(path) == zipFileName {
 			return nil
 		}
-
-		// fmt.Printf("Adding %s to the zipped archive\n", target)
 
 		// Create a new file entry in the zipped archive
 		zipFileEntry, err := zipWriter.Create(path)
@@ -97,7 +95,6 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Successfully added all files from %s to zipped archive at %s\n", sourcePath, zipFilePath)
 
 	// Make sure all prior writes are sync'd to the filesystem
 	// This is necessary bc we're going to read the file right after writing it
@@ -128,14 +125,16 @@ func UploadDirectoryToSpaces(config config.Config, sourcePath string, destPath s
 	if len(fileBytes) == 0 {
 		return fmt.Errorf("Failed to read zipped archive at %s: read zero bytes of data", zipFilePath)
 	}
+	log.Good("Successfully added all files from %s to zipped archive at %s", sourcePath, zipFilePath)
 
 	// Upload the zipped archive
 	destKey := filepath.Join(destPath, "input.zip")
-	fmt.Printf("Uploading archive (%v bytes) to %s\n", len(fileBytes), destKey)
+	log.Wait("Uploading zipped archive (%v bytes) to %s", len(fileBytes), destKey)
 	err = s3.PutObject(config, destKey, fileBytes)
 	if err != nil {
 		return err
 	}
+	log.Good("Zipped archive uploaded successfully")
 
 	return nil
 }

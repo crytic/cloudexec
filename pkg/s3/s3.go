@@ -127,7 +127,6 @@ func CreateBucket(config config.Config) error {
 	if err != nil {
 		return fmt.Errorf("Failed to wait for bucket '%s': %w", bucketName, err)
 	}
-	// fmt.Printf("Created bucket '%s'...\n", bucketName)
 	return nil
 }
 
@@ -148,7 +147,6 @@ func PutObject(config config.Config, key string, value []byte) error {
 		if err != nil {
 			return fmt.Errorf("Failed to create %s directory in bucket %s: %w", key, bucketName, err)
 		}
-		// fmt.Printf("Successfully created directory in s3 bucket: %s/%s\n", bucketName, key)
 		return nil
 	}
 	// hash the input to ensure the integrity of file
@@ -167,7 +165,6 @@ func PutObject(config config.Config, key string, value []byte) error {
 	if err != nil {
 		return fmt.Errorf("Failed to upload file %s to bucket %s: %w", key, bucketName, err)
 	}
-	// fmt.Printf("Successfully uploaded file to s3 bucket: %s/%s\n", bucketName, key)
 	return nil
 }
 

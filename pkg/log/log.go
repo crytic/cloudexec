@@ -1,3 +1,5 @@
+package log
+
 import (
 	"fmt"
 )
@@ -12,26 +14,26 @@ const (
 )
 
 func Info(msg string, args ...interface{}) {
-  formatted := fmt.Sprintf(format, args...)
+  formatted := fmt.Sprintf(msg, args...)
   fmt.Println(ColorWhite, formatted, ColorReset)
 }
 
-func Wait(format string, args ...interface{}) {
-  formatted := fmt.Sprintf(format, args...) + "..."
+func Wait(msg string, args ...interface{}) {
+  formatted := fmt.Sprintf(msg, args...) + "..."
   fmt.Println(ColorBlue, formatted, ColorReset)
 }
 
 func Good(msg string, args ...interface{}) {
-  formatted := fmt.Sprintf(format, args...)
+  formatted := fmt.Sprintf(msg, args...)
   fmt.Println(ColorGreen, formatted, ColorReset)
 }
 
 func Warn(msg string, args ...interface{}) {
-  formatted := fmt.Sprintf(format, args...)
+  formatted := fmt.Sprintf(msg, args...)
   fmt.Println(ColorYellow, formatted, ColorReset)
 }
 
 func Error(msg string, args ...interface{}) {
-  formatted := fmt.Sprintf(format, args...)
+  formatted := fmt.Sprintf(msg, args...)
   fmt.Println(ColorRed, formatted, ColorReset)
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
@@ -79,7 +78,7 @@ func main() {
 					if err != nil {
 						return err
 					}
-					log.Info("Using CloudExec image: %s\n", snap.Name)
+					log.Info("Using CloudExec image: %s", snap.Name)
 					return nil
 				},
 			},
@@ -130,10 +129,7 @@ func main() {
 						return err
 					}
 					err = Launch(config, dropletSize, dropletRegion, lc)
-					if err != nil {
-						log.Fatal(err)
-					}
-					return nil
+          return err
 				},
 			},
 
@@ -297,8 +293,8 @@ func main() {
 						}
 						return nil
 					} else {
-						fmt.Println("error: Can't attach, no running job found")
-						fmt.Println("Check the status of the job with cloudexec status")
+						log.Error("Can't attach, no running job found")
+						log.Info("Check the status of the job with cloudexec status")
 						return nil
 					}
 				},
@@ -508,7 +504,7 @@ func main() {
 							}
 							// Print the jobs from the state
 							for _, job := range existingState.Jobs {
-								fmt.Printf("Job ID: %d, Status: %s\n", job.ID, job.Status)
+								log.Info("Job ID: %d, Status: %s", job.ID, job.Status)
 							}
 							return nil
 						},
@@ -528,13 +524,13 @@ func main() {
 							}
 							jobID := c.Args().First() // Get the job ID from the arguments
 							if jobID == "" {
-								fmt.Println("Please provide a job ID to remove")
+								log.Warn("Please provide a job ID to remove")
 								return nil
 							}
 							// Convert jobID string to int64
 							id, err := strconv.ParseInt(jobID, 10, 64)
 							if err != nil {
-								fmt.Printf("Invalid job ID: %s\n", jobID)
+								log.Error("Invalid job ID: %s", jobID)
 								return nil
 							}
 							newState := &state.State{}
@@ -573,7 +569,7 @@ func main() {
 							if err != nil {
 								return err
 							}
-							fmt.Println(string(json))
+							log.Info(string(json))
 							return nil
 						},
 					},
@@ -583,7 +579,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		fmt.Printf("%v\n", err)
+		log.Error("%v\n", err)
 		os.Exit(1)
 	}
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/s3"
 	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
@@ -19,29 +20,30 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 	// Confirm job data deletion
 	var numToRm int = len(objects)
 	if numToRm == 0 {
-		fmt.Printf("Bucket is already empty.\n")
+		log.Info("Bucket is already empty.")
 		return nil
 	}
-	fmt.Printf("Removing ALL input, output, and logs associated with %s...\n", prefix)
+	log.Info("Removing ALL input, output, and logs associated with %s", prefix)
 	if !force { // Ask for confirmation before cleaning this job if no force flag
-		fmt.Println("Confirm? (y/n)")
+		log.Warn("Confirm? (y/n)")
 		var response string
 		fmt.Scanln(&response)
 		if strings.ToLower(response) != "y" {
-			fmt.Printf("Job %v was not cleaned\n", jobID)
+			log.Info("Job %v was not cleaned", jobID)
 			return nil
 		}
 	}
-	fmt.Printf("Deleting bucket contents...\n")
+	log.Wait("Deleting bucket contents")
 	// Delete all objects in the bucket
 	for _, object := range objects {
-		fmt.Println("Deleting object: ", object)
+		log.Info("Deleting object: ", object)
 		err = s3.DeleteObject(config, object)
 		if err != nil {
 			return err
 		}
 	}
-	fmt.Printf("Deleted %d objects from bucket, removing job %v from state file..\n", numToRm, jobID)
+	log.Good("Deleted %d objects from bucket", numToRm)
+	log.Wait("Removing job %v from state file", numToRm, jobID)
 	newState := &state.State{}
 	deleteJob := state.Job{
 		ID:     jobID,
@@ -50,9 +52,9 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 	newState.CreateJob(deleteJob)
 	err = state.MergeAndSave(config, newState)
 	if err != nil {
-		return fmt.Errorf("Error removing %s from state file: %w\n", prefix, err)
+		return fmt.Errorf("Error removing %s from state file: %w", prefix, err)
 	}
-	fmt.Printf("Removing ssh config for job %v...\n", jobID)
+	log.Wait("Removing ssh config for job %v", jobID)
 	err = ssh.DeleteSSHConfig(jobID)
 	if err != nil {
 		return fmt.Errorf("Failed to delete ssh config: %w", err)
@@ -62,7 +64,7 @@ func CleanBucketJob(config config.Config, existingState *state.State, jobID int6
 
 func CleanBucketAll(config config.Config, existingState *state.State, force bool) error {
 	if len(existingState.Jobs) == 0 {
-		fmt.Println("No jobs are available")
+		log.Info("No jobs are available")
 		return nil
 	}
 	for _, job := range existingState.Jobs {

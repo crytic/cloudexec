@@ -8,6 +8,7 @@ import (
 
 	"github.com/crytic/cloudexec/pkg/config"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
@@ -161,7 +162,7 @@ func (s *State) CancelRunningJob(config config.Config, jobID int64) error {
 	for i, job := range s.Jobs {
 		if job.ID == jobID {
 			if job.Status == Running || job.Status == Provisioning {
-				fmt.Printf("Setting status of job %d to 'Cancelled'\n", job.ID)
+				log.Info("Setting status of job %d to 'Cancelled'", job.ID)
 				s.Jobs[i].Status = Cancelled
 				break
 			} else {
@@ -207,7 +208,7 @@ func GetJobIdsByInstance(config config.Config) (map[int64][]int64, error) {
 	}
 	for _, job := range existingState.Jobs {
 		if job.Droplet.ID == 0 {
-			fmt.Printf("Warning: Uninitialized droplet id for job %d\n", job.ID)
+			log.Warn("Uninitialized droplet id for job %d", job.ID)
 		}
 		instanceToJobIds[job.Droplet.ID] = append(instanceToJobIds[job.Droplet.ID], job.ID)
 	}

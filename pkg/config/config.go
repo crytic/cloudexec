@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+
+	"github.com/crytic/cloudexec/pkg/log"
 )
 
 type Config struct {
@@ -40,7 +42,7 @@ func Create(configValues Config) error {
 		return fmt.Errorf("Failed to encode configuration values: %w", err)
 	}
 
-	fmt.Printf("Configuration file created at: %s\n", configFile)
+	log.Good("Configuration file created at: %s", configFile)
 	return nil
 }
 

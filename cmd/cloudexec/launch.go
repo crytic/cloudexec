@@ -9,6 +9,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/crytic/cloudexec/pkg/config"
 	do "github.com/crytic/cloudexec/pkg/digitalocean"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/ssh"
 	"github.com/crytic/cloudexec/pkg/state"
 )
@@ -84,10 +85,7 @@ func LoadLaunchConfig(launchConfigPath string) (LaunchConfig, error) {
 }
 
 func Launch(config config.Config, dropletSize string, dropletRegion string, lc LaunchConfig) error {
-	username := config.Username
-	bucketName := fmt.Sprintf("cloudexec-%s", username)
-
-	// get existing state from bucket
+	// get existing state
 	existingState, err := state.GetState(config)
 	if err != nil {
 		return fmt.Errorf("Failed to get S3 state: %w", err)
@@ -115,7 +113,7 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	newState.CreateJob(newJob)
 	// sync state to bucket
 	err = state.MergeAndSave(config, newState)
-	fmt.Printf("Registered new job with id %v\n", thisJobId)
+	log.Info("Registered new job with id %v", thisJobId)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}
@@ -123,36 +121,31 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 	// upload local files to the bucket
 	sourcePath := lc.Input.Directory // TODO: verify that this path exists & throw informative error if not
 	destPath := fmt.Sprintf("job-%v", thisJobId)
-	fmt.Printf("Compressing and uploading contents of directory %s to bucket %s/%s...\n", sourcePath, bucketName, destPath)
 	err = UploadDirectoryToSpaces(config, sourcePath, destPath)
 	if err != nil {
 		return fmt.Errorf("Failed to upload files: %w", err)
 	}
 
 	// Get or create an SSH key
-	fmt.Println("Getting or creating SSH key pair...")
 	publicKey, err := ssh.GetOrCreateSSHKeyPair()
 	if err != nil {
 		return fmt.Errorf("Failed to get or creating SSH key pair: %w", err)
 	}
 
 	// Prepare user data
-	fmt.Println("Generating user data...")
 	userData, err := GenerateUserData(config, lc)
 	if err != nil {
 		return fmt.Errorf("Failed to generate user data: %w", err)
 	}
 
-	fmt.Printf("Creating new %s droplet in %s for job %d...\n", dropletSize, config.DigitalOcean.SpacesRegion, thisJobId)
+	log.Wait("Creating new %s droplet in %s for job %d", dropletSize, config.DigitalOcean.SpacesRegion, thisJobId)
 	droplet, err := do.CreateDroplet(config, config.DigitalOcean.SpacesRegion, dropletSize, userData, thisJobId, publicKey)
 	if err != nil {
 		return fmt.Errorf("Failed to create droplet: %w", err)
 	}
-
-	fmt.Printf("Droplet created with IP: %v\n", droplet.IP)
+	log.Good("Droplet created with IP: %v", droplet.IP)
 
 	// Add the droplet info to state
-	fmt.Println("Adding new droplet info to state...")
 	updatedAt := time.Now().Unix()
 	for i, job := range newState.Jobs {
 		if job.ID == thisJobId {
@@ -160,30 +153,30 @@ func Launch(config config.Config, dropletSize string, dropletRegion string, lc L
 			newState.Jobs[i].UpdatedAt = updatedAt
 		}
 	}
-	fmt.Printf("Uploading new state to %s\n", bucketName)
 	err = state.MergeAndSave(config, newState)
 	if err != nil {
 		return fmt.Errorf("Failed to update S3 state: %w", err)
 	}
+	log.Info("Saved new droplet info to state")
 
 	// Add the droplet to the SSH config file
-	fmt.Println("Adding droplet to SSH config file...")
 	err = ssh.AddSSHConfig(thisJobId, droplet.IP)
 	if err != nil {
 		return fmt.Errorf("Failed to add droplet to SSH config file: %w", err)
 	}
+	log.Info("Saved droplet info to SSH config")
 
 	// Ensure we can SSH into the droplet
-	fmt.Println("Ensuring we can SSH into the droplet...")
+	log.Wait("Waiting until our new droplet wakes up")
 	err = ssh.WaitForSSHConnection(thisJobId)
 	if err != nil {
 		return fmt.Errorf("Failed to SSH into the droplet: %w", err)
 	}
-	fmt.Println("SSH connection established!")
-	fmt.Println("Launch complete")
-	fmt.Println("You can now attach to the running job with: cloudexec attach")
-	fmt.Println("Stream logs from the droplet with: cloudexec logs")
-	fmt.Println("SSH to your droplet with: ssh cloudexec")
+	log.Good("SSH connection established!")
+	log.Good("Launch complete")
+	log.Info("You can now attach to the running job with: cloudexec attach")
+	log.Info("Stream logs from the droplet with: cloudexec logs")
+	log.Info("SSH to your droplet with: ssh cloudexec-%v", thisJobId)
 
 	return nil
 }

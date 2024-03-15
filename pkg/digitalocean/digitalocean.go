@@ -88,7 +88,6 @@ func findSSHKeyOnDigitalOcean(keyName string) (string, string, error) {
 	}
 	for _, key := range keys {
 		if key.Name == keyName {
-			log.Good("SSH key found. ID=%v | Name=%s | Fingerprint=%v\n", key.ID, key.Name, key.Fingerprint)
 			return key.Fingerprint, key.PublicKey, nil
 		}
 	}
@@ -108,16 +107,16 @@ func CheckAuth(config config.Config) error {
 	// Check Account authentication
 	_, _, err = doClient.Account.Get(context.Background())
 	if err != nil {
-		return fmt.Errorf("%s Failed to authenticate with DigitalOcean API: %w", noEntry, err)
+		return fmt.Errorf("Failed to authenticate with DigitalOcean API: %w", err)
 	}
   log.Good("Successfully authenticated with DigitalOcean API")
 
 	// Check Spaces authentication
 	_, err = s3.ListBuckets(config)
 	if err != nil {
-		return fmt.Errorf("%s Failed to authenticate with DigitalOcean Spaces API: %w", noEntry, err)
+		return fmt.Errorf("Failed to authenticate with DigitalOcean Spaces API: %w", err)
 	}
-	log.Good("%s Successfully authenticated with DigitalOcean Spaces API", greenCheck)
+	log.Good("Successfully authenticated with DigitalOcean Spaces API")
 	return nil
 }
 
@@ -141,13 +140,13 @@ func CreateDroplet(config config.Config, region string, size string, userData st
 		}
 	} else {
 		// Create the SSH key on DigitalOcean
-		log.Wait("Creating SSH key on DigitalOcean")
+		log.Wait("Saving SSH public key to DigitalOcean")
 		keyName := fmt.Sprintf("cloudexec-%v", config.Username)
 		sshKeyFingerprint, err = createSSHKeyOnDigitalOcean(keyName, publicKey)
 		if err != nil {
 			return droplet, fmt.Errorf("Failed to create SSH key on DigitalOcean: %w", err)
 		}
-		log.Good("SSH key created on DigitalOcean with fingerprint: %v\n", sshKeyFingerprint)
+		log.Good("SSH key is available on DigitalOcean with fingerprint: %v", sshKeyFingerprint)
 	}
 
 	snap, err := GetLatestSnapshot(config)
@@ -156,7 +155,6 @@ func CreateDroplet(config config.Config, region string, size string, userData st
 	}
 
 	// Create a new droplet
-	log.Wait("Creating droplet")
 	createRequest := &godo.DropletCreateRequest{
 		Name:   dropletName,
 		Region: region,

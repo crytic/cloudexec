@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/crytic/cloudexec/pkg/config"
+	"github.com/crytic/cloudexec/pkg/log"
 	"github.com/crytic/cloudexec/pkg/s3"
 )
 
@@ -25,7 +26,7 @@ func Init(config config.Config) error {
 
 	if !bucketExists {
 		// Create a new bucket
-		fmt.Printf("Creating new %s bucket...\n", bucketName)
+		log.Wait("Creating new %s bucket", bucketName)
 		err = s3.CreateBucket(config)
 		if err != nil {
 			return err
@@ -56,7 +57,7 @@ func initState(config config.Config, bucketName string) error {
 	}
 	// Create the state directory if it does not already exist
 	if !stateDirExists {
-		fmt.Printf("Creating new state directory at %s/%s\n", bucketName, stateDir)
+		log.Wait("Creating new state directory at %s/%s", bucketName, stateDir)
 		err = s3.PutObject(config, stateDir, []byte{})
 		if err != nil {
 			return fmt.Errorf("Failed to create state directory at %s/%s: %w", bucketName, stateDir, err)
@@ -71,7 +72,7 @@ func initState(config config.Config, bucketName string) error {
 	}
 	// Create the initial state file if it does not already exist
 	if !statePathExists {
-		fmt.Printf("Creating new state file at %s/%s\n", bucketName, statePath)
+		log.Wait("Creating new state file at %s/%s", bucketName, statePath)
 		err = s3.PutObject(config, statePath, []byte("{}"))
 		if err != nil {
 			return fmt.Errorf("Failed to create state file in bucket %s: %w", bucketName, err)
