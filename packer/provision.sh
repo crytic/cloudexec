@@ -48,8 +48,8 @@ curl -fsSL https://github.com/crytic/medusa/releases/download/v0.1.3/medusa-linu
 echo "Extracting medusa..."
 tar -xzf /tmp/medusa.tar.gz -C /tmp
 echo "Installing medusa..."
-chmod +x medusa
-sudo mv medusa /usr/local/bin
+chmod +x /tmp/medusa
+sudo mv /tmp/medusa /usr/local/bin
 rm /tmp/medusa.tar.gz
 
 echo "Installing docker and its dependencies..."
