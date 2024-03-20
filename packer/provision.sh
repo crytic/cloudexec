@@ -13,7 +13,7 @@ hostname -F /etc/hostname
 echo "Installing prereqs..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip
+apt-get install -y jq s3cmd tmux python3-pip python3-venv
 
 echo "Downloading doctl..."
 curl -fsSL -o /tmp/doctl-1.92.0-linux-amd64.tar.gz https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz
@@ -31,25 +31,24 @@ echo "Installing solc and slither..."
 python3 -m venv ~/venv
 source ~/venv/bin/activate
 pip3 install solc-select slither-analyzer crytic-compile
-solc-select install 0.8.6
-solc-select use 0.8.6
+solc-select use latest --always-install
 
 echo "Downloading echidna..."
-curl -fsSL -o /tmp/echidna.zip https://github.com/crytic/echidna/releases/download/v2.2.1/echidna-2.2.1-Linux.zip
+curl -fsSL https://github.com/crytic/echidna/releases/download/v2.2.3/echidna-2.2.3-x86_64-linux.tar.gz -o /tmp/echidna.tar.gz
 echo "Extracting echidna..."
-unzip /tmp/echidna.zip -d /tmp
 tar -xzf /tmp/echidna.tar.gz -C /tmp
 echo "Installing echidna..."
 mv /tmp/echidna /usr/local/bin
 rm /tmp/echidna.tar.gz
 
 echo "Downloading medusa..."
-sudo apt-get update
-sudo apt-get install -y unzip
-curl -fsSL https://github.com/crytic/medusa/releases/download/v0.1.0/medusa-linux-x64.zip -o medusa.zip
-unzip medusa.zip
-chmod +x medusa
-sudo mv medusa /usr/local/bin
+curl -fsSL https://github.com/crytic/medusa/releases/download/v0.1.3/medusa-linux-x64.tar.gz -o /tmp/medusa.tar.gz
+echo "Extracting medusa..."
+tar -xzf /tmp/medusa.tar.gz -C /tmp
+echo "Installing medusa..."
+chmod +x /tmp/medusa
+sudo mv /tmp/medusa /usr/local/bin
+rm /tmp/medusa.tar.gz
 
 echo "Installing docker and its dependencies..."
 apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
