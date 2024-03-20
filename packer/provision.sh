@@ -13,7 +13,7 @@ hostname -F /etc/hostname
 echo "Installing prereqs..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y jq s3cmd tmux python3-pip python3-venv unzip
+apt-get install -y jq s3cmd tmux python3-pip python3-venv
 
 echo "Downloading doctl..."
 curl -fsSL -o /tmp/doctl-1.92.0-linux-amd64.tar.gz https://github.com/digitalocean/doctl/releases/download/v1.92.0/doctl-1.92.0-linux-amd64.tar.gz
@@ -34,7 +34,7 @@ pip3 install solc-select slither-analyzer crytic-compile
 solc-select use latest --always-install
 
 echo "Downloading echidna..."
-curl -fsSL https://github.com/crytic/echidna/releases/download/v2.2.3/echidna-2.2.3-x86_64-linux.tar.gz -o /tmp/echidna.tar.gz 
+curl -fsSL https://github.com/crytic/echidna/releases/download/v2.2.3/echidna-2.2.3-x86_64-linux.tar.gz -o /tmp/echidna.tar.gz
 echo "Extracting echidna..."
 tar -xzf /tmp/echidna.tar.gz -C /tmp
 echo "Installing echidna..."
