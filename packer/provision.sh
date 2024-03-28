@@ -3,6 +3,29 @@
 set -e
 
 ########################################
+## Helper Functions
+
+function get_latest_version {
+  project="$1"
+  github_api="https://api.github.com/repos/${project}/releases/latest"
+  curl -s "$github_api" | jq '.tag_name' | tr -d 'v' | tr -d '"'
+}
+
+function get_latest_artifact {
+  project="$1"
+  github_api="https://api.github.com/repos/${project}/releases/latest"
+  curl -s "$github_api" | jq '.assets[] | select(.name | test("linux")) | .browser_download_url' | grep -v "sigstore" | tr -d '"'
+}
+
+########################################
+## Versions
+
+doctl_version="1.92.0"
+solc_version="0.8.6"
+echidna_version="$(get_latest_version "crytic/echidna")"
+medusa_version="$(get_latest_version "crytic/medusa")"
+
+########################################
 ## Required Configuration and Dependencies
 
 # set hostname
@@ -27,28 +50,25 @@ rm /tmp/doctl-1.92.0-linux-amd64.tar.gz
 ########################################
 ## Common fuzz testing and analysis tools
 
-echo "Installing solc and slither..."
+echo "Installing slither and solc v${solc_version}..."
 python3 -m venv ~/venv
 source ~/venv/bin/activate
 pip3 install solc-select slither-analyzer crytic-compile
 solc-select use latest --always-install
 
-echo "Downloading echidna..."
-curl -fsSL https://github.com/crytic/echidna/releases/download/v2.2.3/echidna-2.2.3-x86_64-linux.tar.gz -o /tmp/echidna.tar.gz
-echo "Extracting echidna..."
+echo "Installing echidna v${echidna_version}..."
+curl -fsSL -o /tmp/echidna.tar.gz "$(get_latest_artifact "crytic/echidna")"
 tar -xzf /tmp/echidna.tar.gz -C /tmp
-echo "Installing echidna..."
 mv /tmp/echidna /usr/local/bin
+chmod +x /usr/local/bin/echidna
 rm /tmp/echidna.tar.gz
 
-echo "Downloading medusa..."
-curl -fsSL https://github.com/crytic/medusa/releases/download/v0.1.3/medusa-linux-x64.tar.gz -o /tmp/medusa.tar.gz
-echo "Extracting medusa..."
-tar -xzf /tmp/medusa.tar.gz -C /tmp
-echo "Installing medusa..."
-chmod +x /tmp/medusa
+echo "Installing medusa v${medusa_version}..."
+curl -fsSL -o /tmp/medusa.zip "$(get_latest_artifact "crytic/medusa")"
+unzip /tmp/medusa.zip -d /tmp
 sudo mv /tmp/medusa /usr/local/bin
-rm /tmp/medusa.tar.gz
+chmod +x /usr/local/bin/medusa
+rm /tmp/medusa.zip
 
 echo "Installing docker and its dependencies..."
 apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
