@@ -101,7 +101,7 @@
               url = "git+ssh://git@github.com/trailofbits/medusa";
               rev = "72e9b8586ad93b37ff9063ccf3f5b471f934c264";
             };
-            vendorSha256 = "sha256-IKB8c6oxF5h88FdzUAmNA96BpNo/LIbwzuDCMFsdZNE=";
+            vendorHash = "sha256-IKB8c6oxF5h88FdzUAmNA96BpNo/LIbwzuDCMFsdZNE=";
             nativeBuildInputs = [
               packages.crytic-compile
               pkgs.solc
