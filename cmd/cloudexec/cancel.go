@@ -13,7 +13,7 @@ import (
 func CancelJob(config config.Config, existingState *state.State, job *state.Job, force bool) error {
 	if job.Status != state.Provisioning && job.Status != state.Running {
 		log.Info("Job %v is not running, it is %s", job.ID, job.Status)
-    return nil
+		return nil
 	}
 	log.Warn("Destroying droplet %s associated with job %v: IP=%v | CreatedAt=%s", job.Droplet.Name, job.ID, job.Droplet.IP, job.Droplet.Created)
 	if !force { // Ask for confirmation before cleaning this job if no force flag
