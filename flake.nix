@@ -2,7 +2,7 @@
   description = "CloudExec VPS provisioning helper";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/4ecab3273592f27479a583fb6d975d4aba3486fe"; # v23.05
+    nixpkgs.url = "github:nixos/nixpkgs/11cd405226b6663b1ba2073dc7d8b0d7a78175d9"; # 240209
     utils.url = "github:numtide/flake-utils/04c1b180862888302ddfb2e3ad9eaa63afc60cf8"; # v1.0.0
   };
 
@@ -101,7 +101,7 @@
               url = "git+ssh://git@github.com/trailofbits/medusa";
               rev = "72e9b8586ad93b37ff9063ccf3f5b471f934c264";
             };
-            vendorSha256 = "sha256-IKB8c6oxF5h88FdzUAmNA96BpNo/LIbwzuDCMFsdZNE=";
+            vendorHash = "sha256-IKB8c6oxF5h88FdzUAmNA96BpNo/LIbwzuDCMFsdZNE=";
             nativeBuildInputs = [
               packages.crytic-compile
               pkgs.solc
@@ -134,7 +134,6 @@
               go-tools
               gopls
               go-outline
-              gocode
               gopkgs
               gocode-gomod
               godef

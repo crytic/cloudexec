@@ -1,2 +1,3 @@
 enable=all
-disable=SC2154 # Disabled because it's disabled by trunk
+disable=SC2154 # Disabled because it's disabled in trunk by default
+disable=SC2312 # Disabled because we often don't need return values

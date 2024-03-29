@@ -129,7 +129,7 @@ func main() {
 						return err
 					}
 					err = Launch(config, dropletSize, dropletRegion, lc)
-          return err
+					return err
 				},
 			},
 
