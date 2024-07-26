@@ -111,11 +111,7 @@ func main() {
 					// Check if a local cloudexec.toml exists
 					launchConfigFilePath := c.String("config")
 					if _, err := os.Stat(launchConfigFilePath); os.IsNotExist(err) {
-						// Check if the path to a launch config is provided
-						if c.Args().Len() < 1 {
-							return fmt.Errorf("please create cloudexec.toml with 'cloudexec init' or use the '--config' flag to provide a path to your custom launch config file")
-						}
-						launchConfigFilePath = c.String("config")
+						return fmt.Errorf("please create cloudexec.toml with 'cloudexec init' or use the '--config' flag to provide a path to your custom launch config file")
 					}
 					// Load the launch configuration
 					lc, err := LoadLaunchConfig(launchConfigFilePath)
