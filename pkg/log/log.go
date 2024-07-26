@@ -10,7 +10,7 @@ const (
 	ColorGreen  = "\033[32m"
 	ColorBlue   = "\033[34m"
 	ColorYellow = "\033[33m"
-	ColorWhite  = "\033[37m"
+	ColorWhite  = "\033[97m"
 )
 
 func Info(msg string, args ...interface{}) {
