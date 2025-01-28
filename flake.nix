@@ -2,8 +2,8 @@
   description = "CloudExec VPS provisioning helper";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/4ecab3273592f27479a583fb6d975d4aba3486fe"; # v23.05
-    utils.url = "github:numtide/flake-utils/04c1b180862888302ddfb2e3ad9eaa63afc60cf8"; # v1.0.0
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    utils.url = "github:numtide/flake-utils/main";
   };
 
   outputs = inputs: with inputs;
@@ -41,7 +41,7 @@
             vendorHash = "sha256-xiiMcjo+hRllttjYXB3F2Ms2gX43r7/qgwxr4THNhsk=";
             nativeBuildInputs = [
               pkgs.git
-              pkgs.go_1_20
+              pkgs.go_1_22
             ];
             ldflags = [
               "-X main.Version=${version}"
@@ -101,7 +101,7 @@
               url = "git+ssh://git@github.com/trailofbits/medusa";
               rev = "72e9b8586ad93b37ff9063ccf3f5b471f934c264";
             };
-            vendorSha256 = "sha256-IKB8c6oxF5h88FdzUAmNA96BpNo/LIbwzuDCMFsdZNE=";
+            vendorHash = "sha256-IKB8c6oxF5h88FdzUAmNA96BpNo/LIbwzuDCMFsdZNE=";
             nativeBuildInputs = [
               packages.crytic-compile
               pkgs.solc
@@ -123,18 +123,18 @@
           default = pkgs.mkShell {
             buildInputs = with pkgs; [
               # misc tools
+              git
               bashInteractive
               shellcheck
               packages.vscode
               just
               trunk-io
               # go development
-              go_1_20
+              go_1_22
               gotools
               go-tools
               gopls
               go-outline
-              gocode
               gopkgs
               gocode-gomod
               godef
