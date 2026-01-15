@@ -2,7 +2,7 @@
   description = "CloudExec VPS provisioning helper";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     utils.url = "github:numtide/flake-utils";
     crytic.url = "github:crytic/crytic.nix";
   };
@@ -39,7 +39,7 @@
             src = ./.;
             vendorHash = "sha256-xiiMcjo+hRllttjYXB3F2Ms2gX43r7/qgwxr4THNhsk=";
             nativeBuildInputs = [
-              pkgs.go_1_22
+              pkgs.go
             ];
             ldflags = [
               "-X main.Version=${version}"
@@ -64,7 +64,7 @@
               just
               trunk-io
               # go development
-              go_1_22
+              go
               gotools
               go-tools
               gopls
