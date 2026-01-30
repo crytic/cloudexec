@@ -12,7 +12,7 @@ import (
 )
 
 func CleanJob(config config.Config, existingState *state.State, jobID int64, force bool) error {
-	prefix := fmt.Sprintf("job-%v", jobID)
+	prefix := fmt.Sprintf("job-%v/", jobID)
 	objects, err := s3.ListObjects(config, prefix)
 	if err != nil {
 		return fmt.Errorf("Failed to list objects in bucket with prefix %s: %w", prefix, err)

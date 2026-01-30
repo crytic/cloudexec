@@ -5,7 +5,7 @@ fmt:
 	go fmt pkg/ssh/*.go
 	go fmt pkg/state/*.go
 
-trunk:
+trunk: fmt
 	trunk fmt
 	trunk check
 
